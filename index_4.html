@@ -1,0 +1,655 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+  <title>J1939 CAN bus spy, Chapt. 4</title>
+
+  <meta http-equiv="Content-Type" content="text/html; charset=unicode">
+
+  <meta name="description" content="J1939 and CAN bus - RS232 spy using Microchip PIC18F4580.">
+
+  <meta name="keywords" content="J1939, CAN bus, RS232, spy, simulation">
+
+  <style type="text/css">
+BODY {font-family: Verdana,courier;} .myText {COLOR: #339900} .quoted {COLOR: gray} .highlite {BACKGROUND-COLOR: #ffff33} A:hover { TEXT-DECORATION: underline; FONT-WEIGHT: bold }
+BODY {
+background : transparent url(images/gutter_gray.png) repeat-y;
+}
+div.float {
+float: left;
+}
+div.float p {
+text-align: center;
+}
+div.row span.left {
+float: left;
+text-align: left;
+font-weight: bold;
+width: 50%;
+}
+div.row span.right {
+float: right;
+text-align: right;
+font-weight: bold;
+width: 50%;
+}
+  </style>
+</head>
+
+<body>
+<table style="width: 800px;">
+ <tbody>
+ <tr>
+
+      <td> 
+      <h3>Chapter 4<br>
+ </h3>
+ 
+      <h3>J1939.c
+CAN Bus plus RS232&nbsp;(continued)</h3>
+      <h4 style="text-align: center;">CAN bus software emulators</h4>
+ <a href="index.html">&lt;&lt;back to main
+page</a><br>
+ <br>
+ 
+      <div align="center">
+      <table style="width: 90%;">
+ <tbody>
+ <tr>
+ <td><span class="quoted">Abstract
+of
+the <a title="previous chapter" href="index_1.html">1rst
+chapter</a>:<br>
+
+Microchip
+provided <a href="http://ww1.microchip.com/downloads/en/AppNotes/J1939.zip">source
+code</a> <img style="width: 15px; height: 16px;" alt="zip" src="images/zip.gif"> for <a href="http://ww1.microchip.com/downloads/en/AppNotes/00930a.pdf">J1939.c
+CAN library</a> <img style="width: 16px; height: 16px;" alt="pdf" src="images/pdf.gif"> (Kim
+Otten et al.), plus Application Maestro generated
+code&nbsp;UARTIntC.c, were used to implement a bare-bones system
+with a 2-node CAN bus, where node #129 upon receiving commands from
+#128
+to toggle a LED also output strings "ON" and "OFF" thru the RSR23.<br>
+
+            <br>
+
+Abstract of the <a href="index_2.html">2nd chapter</a>:<br>
+
+            </span><span class="quoted">We kept the
+2 nodes #128 and #129 exchanging messages, and added a
+3rd
+node, #130, listening to them, and reporting to the PC. Everything
+addressed to our smart node #130 was send to our PC's
+Terminal program, dumping the affected RxBuffers to
+the UART.<br>
+ <br>
+
+Abstract of the <a href="index_3.html">3rd chapter</a>:<br>
+
+Our smart node #130 was put in <span style="font-weight: bold;">ListenOnly</span>
+mode, all masks to zeros - a
+true "spy", now.<br>
+
+But because the firmware J1939.c generates so few messages, the overall
+result is not much exciting.<br class="quoted">
+ </span>
+            <span class="quoted"></span></td>
+ </tr>
+
+        </tbody> 
+      </table>
+ </div>
+ <br>
+ 
+      <div style="text-align: center;"><br>
+ <br>
+ </div>
+
+The firmware we have been using (J1939.c CAN library, Microchip's
+AN930) is just doing
+Address Claiming and sending a "toggle LED" command. Not terribly
+exciting!<br>
+
+So we want to improve it, but that means going deeper into
+understanding the <span style="font-weight: bold;">SAE
+J1939 protocol</span> (automotive, commercial vehicles, etc.).<br>
+
+We could use some help in that, and luckily there are at least 2 free
+"demos" available which we can use.<br>
+ <br>
+ 
+      <ol>
+ <br>
+
+        <li> <a href="#_General_info_about_the_SAE_J1939_protocol_">General
+info about the SAE J1939 protocol&nbsp;</a> </li>
+ <li><a href="#Two_nice_tools_-_which_one_shall_we_use">Two
+nice tools - which one shall we use?</a></li>
+ <li><a href="#Simulating_NA930_J1939.c_CAN_library_in_Vectors_CANoe">Simulating
+NA930 J1939.c CAN library in Vector's CANoe</a></li>
+ <li>
+          <a href="#What_is_next">What's next?</a> </li>
+
+      </ol>
+ 
+      <hr style="width: 100%; height: 2px;"> 
+      <h4><span style="font-weight: bold;"><a name="_General_info_about_the_SAE_J1939_protocol_"></a>General
+info about
+the SAE J1939 protocol</span></h4>
+
+When "googling" SAE + J1939 + protocol, more then 21000 hits result.<br>
+
+      <br>
+
+The recomended path is to <span style="font-weight: bold;">buy</span>
+or <span style="font-weight: bold;">borrough</span>
+the <a href="http://www.sae.org/products/j1939a.htm">original
+SAE
+J1939</a> specs, which run like this:<br>
+ <br>
+ <br>
+
+      <table class="grd">
+ <tbody>
+ <tr class="grd">
+
+            <th class="grd grd-th-maj" colspan="2">Core
+J1939 Standards</th>
+ </tr>
+ <tr class="grd">
+ <td style="vertical-align: top;" class="grd">J1939
+--- &nbsp; &nbsp;&nbsp;</td>
+ <td class="grd"><a href="http://www.sae.org/servlets/productDetail?PROD_TYP=STD&amp;PROD_CD=J1939_200501">Recommended
+Practice for a Serial Control and Communications Vehicle Network</a>
+            <strong>Revised JAN 05</strong></td>
+ </tr>
+ <tr class="grd">
+ <td style="vertical-align: top;" class="grd">J1939-01&nbsp;</td>
+ <td class="grd"><a href="http://www.sae.org/servlets/productDetail?PROD_TYP=STD&amp;PROD_CD=J1939/1_200009">Recommended
+Practice for Control And Communications Network for On-Highway Equipment</a></td>
+
+          </tr>
+ <tr class="grd">
+ <td style="vertical-align: top;" class="grd">J1939-11&nbsp;</td>
+
+            <td class="grd"><a href="http://www.sae.org/servlets/productDetail?PROD_TYP=STD&amp;PROD_CD=J1939/11_199910">Physical
+Layer - 250k bits/s, Twisted Shielded Pair</a></td>
+ </tr>
+
+          <tr class="grd">
+ <td style="vertical-align: top;" class="grd">J1939-13&nbsp;</td>
+ <td class="grd"><a href="http://www.sae.org/servlets/productDetail?PROD_TYP=STD&amp;PROD_CD=J1939/13_200403">Off-Board
+Diagnostic Connector</a> <strong>Revised MAR 04</strong></td>
+
+          </tr>
+ <tr class="grd">
+ <td style="vertical-align: top;" class="grd">J1939-15&nbsp;</td>
+
+            <td class="grd"><a href="http://www.sae.org/servlets/productDetail?PROD_TYP=STD&amp;PROD_CD=J1939/15_200311">Reduced
+Physical Layer, 250K bits/sec, Un-Shielded Twisted Pair (UTP)</a></td>
+
+          </tr>
+ <tr class="grd">
+ <td style="vertical-align: top;" class="grd">J1939-21&nbsp;</td>
+
+            <td class="grd"><a href="http://www.sae.org/servlets/productDetail?PROD_TYP=STD&amp;PROD_CD=J1939/21_200104">Data
+Link Layer</a></td>
+ </tr>
+ <tr class="grd">
+
+            <td style="vertical-align: top;" class="grd">J1939-31&nbsp;</td>
+
+            <td class="grd"><a href="http://www.sae.org/servlets/productDetail?PROD_TYP=STD&amp;PROD_CD=J1939/31_200404">Network
+Layer</a> <strong>Revised APR 04</strong></td>
+
+          </tr>
+ <tr class="grd">
+ <td style="vertical-align: top;" class="grd">J1939-71&nbsp;</td>
+
+            <td class="grd"><a href="http://www.sae.org/servlets/productDetail?PROD_TYP=STD&amp;PROD_CD=J1939/71_200412">Vehicle
+Application Layer</a> <strong>Revised DEC 04</strong></td>
+
+          </tr>
+ <tr class="grd">
+ <td style="vertical-align: top;" class="grd">J1939-73&nbsp;</td>
+
+            <td class="grd"><a href="http://www.sae.org/servlets/productDetail?PROD_TYP=STD&amp;PROD_CD=J1939/73_200403">Application
+Layer - Diagnostics</a> <strong>Revised MAR 04</strong></td>
+
+          </tr>
+ <tr class="grd">
+ <td style="vertical-align: top;" class="grd">J1939-74&nbsp;</td>
+
+            <td class="grd"><a href="http://www.sae.org/servlets/productDetail?PROD_TYP=STD&amp;PROD_CD=J1939/74_200409">Application
+- Configurable Messaging</a> <strong>Revised SEP 04</strong></td>
+
+          </tr>
+ <tr class="grd">
+ <td style="vertical-align: top;" class="grd">J1939-75&nbsp;</td>
+
+            <td class="grd"><a href="http://www.sae.org/servlets/productDetail?PROD_TYP=STD&amp;PROD_CD=J1939/75_200212">Application
+Layer - Generator Sets and Industrial</a></td>
+ </tr>
+
+          <tr class="grd">
+ <td style="vertical-align: top;" class="grd">J1939-81&nbsp;</td>
+ <td class="grd"><a href="http://www.sae.org/servlets/productDetail?PROD_TYP=STD&amp;PROD_CD=J1939/81_200305">Network
+Management</a></td>
+ </tr>
+ 
+        </tbody> 
+      </table>
+
+      <br>
+
+They cost about USD 60 each.<br>
+
+They also have a few Technical Papers-$12 each, like:<br>
+ <br>
+
+      <table class="grd">
+ <tbody>
+ <tr class="grd">
+
+            <th class="grd grd-th-maj" colspan="2">Also
+Included: Related Technical Papers</th>
+ </tr>
+ <tr class="grd">
+ <td style="vertical-align: top;" class="grd">931809&nbsp;</td>
+ <td class="grd"><a href="http://www.sae.org/servlets/productDetail?PROD_TYP=PAPER&amp;PROD_CD=931809">J1939
+High Speed Serial Communications, the Next Generation Network for Heavy
+Duty Vehicles</a></td>
+ </tr>
+ <tr class="grd">
+
+            <td style="vertical-align: top;" class="grd">940361</td>
+
+            <td class="grd"><a href="http://www.sae.org/servlets/productDetail?PROD_TYP=PAPER&amp;PROD_CD=940361">CAN
+Controller Architecture Optimized for SAE J1939 Applications</a></td>
+
+          </tr>
+ <tr class="grd">
+ <td style="vertical-align: top;" class="grd">950043</td>
+
+            <td class="grd"><a href="http://www.sae.org/servlets/productDetail?PROD_TYP=PAPER&amp;PROD_CD=950043">Development
+Tools for SAE J1939 Networks on Tractors</a></td>
+ </tr>
+
+          <tr class="grd">
+ <td style="vertical-align: top;" class="grd">972757</td>
+ <td class="grd"><a href="http://www.sae.org/servlets/productDetail?PROD_TYP=PAPER&amp;PROD_CD=972757">J1939
+Serial Vehicle Network Explanation and Tutorial</a></td>
+ </tr>
+
+          <tr class="grd">
+ <td style="vertical-align: top;" class="grd">972758</td>
+ <td class="grd"><a href="http://www.sae.org/servlets/productDetail?PROD_TYP=PAPER&amp;PROD_CD=972758">System
+Level Testing Using the J1939 Datalink Adapter</a></td>
+ </tr>
+
+          <tr class="grd">
+ <td style="vertical-align: top;" class="grd">972759</td>
+ <td class="grd"><a href="http://www.sae.org/servlets/productDetail?PROD_TYP=PAPER&amp;PROD_CD=972759">Dynamic
+Address Configuration in SAE J1939</a></td>
+ </tr>
+ <tr class="grd">
+ <td style="vertical-align: top;" class="grd">1999-0<br>
+
+1-2840</td>
+ <td class="grd"><a href="http://www.sae.org/servlets/productDetail?PROD_TYP=PAPER&amp;PROD_CD=1999-01-2840">Large-Scale
+Application of J-1939 CAN</a></td>
+ </tr>
+ 
+        </tbody>
+      </table>
+ <br>
+
+The "Also included" I guess means that you can take a single user,
+one-year subscription $595 (ouch!) for the whole lot, which is really
+cheaper
+than to buy one by one <img style="width: 15px; height: 16px;" alt="that hurts!" title="that hurts!" src="images/thumbs-down.gif">.<br>
+ <br>
+
+Notice that J1939-1x covers the OSI 1rst layer, J1939-7x covers the
+7th layer etc..<br>
+ <br>
+
+If you don't feel like giving up&nbsp;your hard-earned money for so
+exotic fare, resort to reading&nbsp;what
+you can find in the net, and with lots of patience you will become more
+and more familiar with
+J1939.<br>
+ <br>
+
+My favorites (because they have already some digested&nbsp;info)
+are:<br>
+ <br>
+ <a href="http://biosystems.okstate.edu/Home/mstone/hsnet.htm">High
+Speed Networking in Construction and Agricultural Equipment</a>
+an overview of J1939,<br>
+ <br>
+ <a href="http://bioen.okstate.edu/home/mstone/papers/Dynadr/dynadr.htm">Dynamic
+Address Configuration in SAE J1939</a> which describes the
+address claim message process<br>
+
+(if you look around the above URLs you will find some other interesting
+papers)<br>
+ <br>
+ <a href="http://www.can-cia.de/icc/2/dattalo.pdf">(SAE)
+Implementation of CAN for Heavy Duty Truck and Bus<br>
+
+Market -- Specification J1939</a><br>
+ <br>
+
+From Kvaser: <a href="http://www.kvaser.com/can/hlps/index.htm">J1939
+Tutorial</a><br>
+ <br>
+
+From <a href="http://www.vector-informatik.com/english/index.html?../products?download.php">Vector
+Informatik GmbH</a> you can download several appNotes etc., like:<br>
+
+      <br>
+ <span style="font-weight: bold;">AN-ION-1-3100_Introduction_to_J1939.pdf</span>
+(I cannot give a direct link,
+you must go to their <a href="http://www.vector-informatik.com/english/index.html?../products?download.php">download
+page</a> and tick the downloads you request, register and then
+proceed to download).<br>
+
+Also the help files for <span style="font-weight: bold;">CANoe</span>
+(see below) and sample databases have much info.<br>
+ <br>
+
+By the way, some weeks ago I asked Vector for some printed materials,
+which they very kindly mailed to me, including their celebrated CAN
+message structure colorful wall chart. Great service <img style="width: 15px; height: 16px;" alt="thumbs-up" title="thumbs-up" src="images/thumbs-up.gif">.<br>
+
+      <br>
+ <br>
+
+But after going thru lots of docs, one can grow a bit disenheartened...
+the J1939 protocol is complex, and to understand it, one must become
+able to
+emulate it either with pencil and paper, or writing C code, or using a
+software emulator, or...<br>
+ <br>
+
+Wait - an <span style="font-weight: bold;">emulator</span>?
+is there such a thing? and if yes, is it very expensive?<br>
+
+The good news: we found 2 software emulators, and both have free demos
+(if you
+know of any other one, please let us know).<br>
+ 
+      <div style="margin-left: 40px;"><a href="code/CAN_Uart_01_128.zip"><br>
+ </a></div>
+
+      <br>
+ 
+      <hr style="width: 100%; height: 2px;"> 
+      <h4><a name="Two_nice_tools_-_which_one_shall_we_use"></a>Two
+nice tools - which one shall we use?</h4>
+ <br>
+ <a href="http://www.ibme.de/eng-xtm.html">Michael
+Eisele's&nbsp;<span style="font-weight: bold;">Xtm</span></a>
+"is a software environment used to
+control embedded network nodes (electronic control units). It can also
+be used to display and modify the inner states of that network nodes.
+Moreover it's possible to visualize the communication of embedded
+network nodes, to analyze it and, if required, to replace missing
+network nodes by simulation its network behaviour."<br>
+ <br>
+
+      <p>The current demo version 3.7 (Aug 03 2005) is available
+here.</p>
+ <a href="download/xtm-setup-37.exe">Xtm
+V3.7, 03 Aug 2005</a>, approx. 3,5MB <br>
+ <br>
+
+We tried it, and we think it can be used the way we intend: to simulate
+a J1939 CAN network, without any actual hardware running (just a
+virtual network of virtual devices).<br>
+ <br>
+
+Here is a screen shot of Xtm:<br>
+ <br>
+ 
+      <div style="text-align: center;"><img style="width: 594px; height: 461px;" alt="Xtm screen shot" title="Xtm screen shot" src="images/xtm_image.png" align="top"><br>
+ </div>
+ <br>
+
+For us the Trace window is the most interesting, as it displays the
+messages data contents.<br>
+
+Reading the help files and studying the samples did not take us very
+far, therefore we tried and request some guidance from Michael. So we
+hope to be back to Xtm soon.<br>
+ <br>
+
+Now to the second simulation tool.<br>
+ <br>
+ <a href="http://www.vector-informatik.com/english/index.html?../products?download.php">Vector
+Informatik GmbH</a> lets you&nbsp;download a simulation (much
+more than
+just that, but this is what we are interested on now) tool <span style="font-weight: bold;">CANoe.exe</span> (5.2).<br>
+
+      <br>
+
+Again, you must go to the <a href="http://www.vector-informatik.com/english/index.html?../products?download.php">downloads
+page</a><input value="CANalyzer/CANoe" name="item_name[]" type="hidden">, tick the
+appropriate items - look for DEMO&nbsp; <span style="font-weight: bold;">CANalyzer/CANoe 5.2 (2005-11-02)</span>,
+register and proceed to
+download (about 150MB):<br>
+ <br>
+ 
+      <div class="quoted" style="margin-left: 40px;">Fully
+functional
+demo including CAN, LIN, MOST, FlexRay, J1939, and J1587. The only
+limitation is that access to any hardware interface is not possible.<br>
+
+When installing, choose J1939 where appropriate. </div>
+ <br>
+
+      <input value="CANalyzer/CANoe" name="item_name[]" type="hidden">You may want to download the last service
+pack: <span style="font-weight: bold;">CANalyzer/CANoe
+5.2 SP2</span> (2006-03-07, about 120MB), altough it is not
+strictly necessary (it adds GPS support - nice touch!).<br>
+ <br>
+
+This is a hefty tool, and we will just confine our efforts to creating
+a simulation of our "old" AN930 J1939.c CAN library. If we manage that,
+we will be very happy for a while <img style="width: 15px; height: 15px;" alt="happy face" title="happy face" src="images/lol.gif">.<br>
+ <br>
+
+In the end, we choose to use Vector's CANoe because it is very
+complete, already incorporates a ready-made J1939 data base, and as
+Vector works for several automotive companies, we guess we can use
+their simulator as a sort of "validator" for our J1939 network design.<br>
+
+      <br>
+
+Here are screen shots of CANoe panels and setup windows:<br>
+ <br>
+
+      <div style="text-align: center;">&nbsp;<img style="width: 500px; height: 557px;" alt="CANoe panels window" title="CANoe panels window" src="images/canoe-panels.png"><br>
+
+      </div>
+ <br>
+
+and CANoe setup window:<br>
+ <br>
+ 
+      <div style="text-align: center;"><img style="width: 680px; height: 557px;" alt="CANoe setup window" title="CANoe setup window" src="images/canoe-setup.png"><br>
+
+      </div>
+ <br>
+ 
+      <hr style="width: 100%; height: 2px;">
+      <h4><a name="Simulating_NA930_J1939.c_CAN_library_in_Vectors_CANoe"></a>Simulating
+NA930 J1939.c CAN library in Vector's CANoe</h4>
+ 
+      <h5>1 -
+getting to know Vetcor's CANoe</h5>
+
+After installing CANoe, we looked in the Samples, and they have one
+called "AddressClaiming".<br>
+
+The comments read:<br>
+ <br>
+ <code><span class="quoted"></span></code> 
+      <table style="background-color: rgb(224, 224, 224); width: 90%; text-align: left; margin-left: auto; margin-right: auto;" border="0" cellpadding="2" cellspacing="2">
+ <tbody>
+
+          <tr>
+ <td><code>Address claiming<br>
+
+-------------------------<br>
+ <br>
+
+This configuration demonstrates the address claiming. On measurement
+start all four nodes sends an address claiming parameter group.<br>
+
+            <br>
+
+The J1939 Scanner displays all nodes on the bus. Use the scanner or the
+node panels to change the address of a node.<br>
+ <br>
+
+Node1 has the highest priority and therefor it will always win the
+address claim against other nodes.<br>
+ </code></td>
+ </tr>
+
+        </tbody> 
+      </table>
+ <code><span class="quoted"></span></code><br>
+
+      <br>
+
+Looks like a good starting point.<br>
+
+So we copy 2 folders from:<br>
+ <br>
+
+Program Files\CANoe 5.2\Demo_J1939_CN\<span style="font-weight: bold;">Database</span>&nbsp;<br>
+
+Program Files\CANoe 5.2\Demo_J1939_CN\MoreExamples\<span style="font-weight: bold;">AddressClaiming</span><br>
+
+      <br>
+
+To our project folder; then with a text editor, we edited <span style="font-weight: bold;">AddressClaiming_CN.cfg</span>
+to point to the new path of <span style="font-weight: bold;">Database\J1939.dbc</span>,
+and the new project (until now, just a copy of AddressClaiming) opens
+without errors.<br>
+ <br>
+
+Let us start by having a look at <span style="font-weight: bold;">Database\J1939.dbc</span>,
+as it can be quite instructive.<br>
+ <br>
+ 
+      <h5><span style="font-weight: bold;">2 -
+Database\J1939.dbc</span></h5>
+
+Going back to <span style="font-weight: bold;">SAE
+J1939-71 Vehicle
+Application Layer</span>, it describes lots and lots of &nbsp;<span style="font-style: italic;">Suspect Parameter Numbers</span>
+starting with <span style="font-weight: bold;">spn16</span>
+- Fuel Filter (Suction Side) Differential Pressure (see also SPN 1382)
+and goes on until (260 pages later...) <span style="font-weight: bold;">spn2806</span> -
+FMS-standard SW-version supported.<br>
+ <br>
+
+Then comes the parameter groups definitions, from <span style="font-weight: bold;">pgn0</span> - Torque/Speed
+Control 1 - TSC1 up to (100 pages later...) <span style="font-weight: bold;">pgn65279</span> - Water in
+Fuel Indicator - WFI.<br>
+ <br>
+
+This long lists must have consumed n-man-years of the SAE committee!<br>
+
+      <br>
+
+Fortunately for us, if you open CANoe\tools\CANdb++ editor and have a
+look at <span style="font-weight: bold;">Database\J1939.dbc</span>,
+you will find (they are sorted alphabetically) correspondingly:<br>
+
+      <br>
+ <code>...<br>
+
+EngFuelFilterSucSideDiffPress SPN1382<br>
+
+...<br>
+
+FMSstandardSWversionSupported<br>
+
+...<br>
+
+(Torque/Speed Control 1 - TSC1 under desguise)<br>
+
+...<br>
+
+WaterInFuelIndicator SPN97<br>
+
+...</code> <br>
+ <br>
+
+each item with a full description according to SAE J1939-71.<br>
+
+This database alone can save you several years of your life, it you are
+about to learn J1939 <img style="width: 16px; height: 15px;" alt="smart!" title="smart!" src="images/lamp.gif">!<br>
+
+      <br>
+
+But now let us make a short break, leaving you to study thouroughly the
+database..<br>
+ <br>
+ 
+      <hr style="width: 100%; height: 2px;"> 
+      <h4><a name="What_is_next"></a>What is
+next?</h4>
+
+We will go deeper into the simulation environment of Vector's CANoe, as
+a way of learning the SAE J1939 protocol.<br>
+ <br>
+
+Our goal is to simulate our skelectical system with 3 nodes, adding
+more and more messages, validating them with CANoe and then porting to
+the firmware.<br>
+ <br>
+
+Stay with&nbsp;us, may be we will get somewhere!<br>
+ <br>
+
+      <hr style="width: 100%; height: 2px;"><br>
+ <br>
+
+And that's
+all, folks.<br>
+
+Please let me know of any broken links, missing
+parts etc. you may find here.<br>
+
+Next issues will become more
+sophisticated - I hope!.<br>
+ <span class="quoted"></span><br>
+
+      <span class="quoted"></span><br>
+ 
+      <div align="center"><a href="http://www.flowerdeliverydeals.com/"><img src="http://c4.amazingcounters.com/counter.php?i=890627&amp;c=2672194" alt="Send Flowers" border="0"></a><br>
+ <small><a href="http://www.amazingcounters.com"><font color="#999999">Free Hit Counter</font></a></small></div>
+
+      <a href="index.html">&lt;&lt;back to main
+page</a><br>
+ <br>
+ <a href="mailto:recursos.pt@gmail.com">&copy;Rec</a>
+&nbsp;(recursos.pt@gmail.com) <br>
+
+06-03-16<br>
+ <br>
+ </td>
+ </tr>
+ 
+  </tbody>
+</table>
+<br>
+
+<br>
+</body>
+</html>

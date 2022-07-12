@@ -1,0 +1,113 @@
+<html>
+<head>
+   <title>TruckSim.c</title>
+   <meta name="generator" content="Lore&#039;s Source to HTML Converter - http://www.newty.de/lsc/index.html"
+</head>
+
+<body style="background:#ffffff;"><a name="top"></a>
+<tr><td><a href="Overview.html"><font color="#0000ff">Back </font></a>
+
+<pre><code><font color="#0000ff">
+<font color="#008040"><i>/*@@var:*/</i></font>
+variables
+<font color="#000000">{</font>
+  <font color="#008040"><i>// Constants</i></font>
+  <b>const float</b> kPI              <font color="#000000">=</font> <font color="#ff0080">3.1415</font><font color="#000000">;</font>
+  <b>const float</b> kVehicleWeight   <font color="#000000">=</font> <font color="#ff0080">20000</font><font color="#000000">;</font>  <font color="#008040"><i>// Vehicle weight in [kg]</i></font>
+  <b>const float</b> kWheelRadius     <font color="#000000">=</font> <font color="#ff0080">0.4</font><font color="#000000">;</font>    <font color="#008040"><i>// Wheel radius in [m]</i></font>
+  <b>const float</b> kMaxEngineSpeed  <font color="#000000">=</font> <font color="#ff0080">2400.0</font><font color="#000000">;</font> <font color="#008040"><i>// Max. engine speed [rpm]</i></font>
+  <b>const float</b> kIdleEngineSpeed <font color="#000000">=</font>  <font color="#ff0080">600.0</font><font color="#000000">;</font> <font color="#008040"><i>// Idle engine speed [rpm]</i></font>
+
+  <font color="#008040"><i>// </i></font>
+  <b>const int</b>   kSystemTime    <font color="#000000">=</font> <font color="#ff0080">100</font><font color="#000000">;</font>                  <font color="#008040"><i>// System time in [ms]</i></font>
+  <b>const float</b> kSystemTimeSec <font color="#000000">=</font> kSystemTime <font color="#000000">/</font> <font color="#ff0080">1000.0</font><font color="#000000">;</font> <font color="#008040"><i>// System time in [sec]</i></font>
+  msTimer     SystemTimer<font color="#000000">;</font>                           <font color="#008040"><i>// System timer</i></font>
+<font color="#000000">}</font>
+<font color="#008040"><i>/*@@end*/</i></font>
+
+<font color="#008040"><i>/*@@timer:SystemTimer:*/</i></font>
+<font color="#008040"><i>/*</i></font>
+<font color="#008040"><i> * System timer</i></font>
+<font color="#008040"><i> *</i></font>
+<font color="#008040"><i> * Simulation values are calculated in this timer.</i></font>
+<font color="#008040"><i> */</i></font>
+on timer SystemTimer
+<font color="#000000">{</font>
+  <b>float</b> vehicleSpeed<font color="#000000">;</font>
+  <b>float</b> axleSpeed<font color="#000000">;</font>
+  <b>float</b> transmissionRatio<font color="#000000">;</font>
+  <b>float</b> engineSpeed<font color="#000000">;</font>
+  <b>float</b> driveForce<font color="#000000">;</font>
+  <b>float</b> engineTorque<font color="#000000">;</font>
+  <b>float</b> brakePedal<font color="#000000">;</font>
+  <b>int</b>   recalc<font color="#000000">;</font>
+
+  <font color="#008040"><i>// get values</i></font>
+  transmissionRatio <font color="#000000">=</font> getValue<font color="#000000">(</font> EvTECU_GearRatio <font color="#000000">);</font>            <font color="#008040"><i>// [%]</i></font>
+  vehicleSpeed      <font color="#000000">=</font> getValue<font color="#000000">(</font> EvVECU_VehicleSpeed <font color="#000000">) /</font> <font color="#ff0080">3.6</font><font color="#000000">;</font>   <font color="#008040"><i>// [m/s]</i></font>
+  engineTorque      <font color="#000000">=</font> getValue<font color="#000000">(</font> EvEMS_Torque <font color="#000000">);</font>                <font color="#008040"><i>// [Nm]</i></font>
+  brakePedal        <font color="#000000">=</font> getValue<font color="#000000">(</font> EvEBS_BrakePedalPos <font color="#000000">) /</font> <font color="#ff0080">100.0</font><font color="#000000">;</font> <font color="#008040"><i>// [%]</i></font>
+  engineSpeed       <font color="#000000">=</font> getValue<font color="#000000">(</font> EvEMS_EngineSpeed <font color="#000000">);</font>           <font color="#008040"><i>// [rpm]</i></font>
+
+  <font color="#008040"><i>// calculate forward force</i></font>
+  driveForce    <font color="#000000">=</font> <font color="#ff0080">0</font><font color="#000000">;</font>
+  <b>if</b> <font color="#000000">(   (</font>transmissionRatio <font color="#000000">&gt;</font> <font color="#ff0080">0</font><font color="#000000">)</font>
+      <font color="#000000">&amp;&amp; (</font>engineSpeed <font color="#000000">&lt;</font> kMaxEngineSpeed<font color="#000000">) )</font>
+  <font color="#000000">{</font>
+    driveForce <font color="#000000">+=</font> engineTorque <font color="#000000">/</font> transmissionRatio <font color="#000000">*</font> kWheelRadius <font color="#000000">*</font> <font color="#ff0080">0.2</font><font color="#000000">;</font>
+  <font color="#000000">}</font>
+  driveForce   <font color="#000000">-=</font> brakePedal <font color="#000000">*</font> <font color="#ff0080">60000</font><font color="#000000">;</font> <font color="#008040"><i>// brake force</i></font>
+  driveForce   <font color="#000000">-= (</font>vehicleSpeed <font color="#000000">*</font> vehicleSpeed<font color="#000000">) *</font> <font color="#ff0080">8</font><font color="#000000">;</font> <font color="#008040"><i>// Air resistance</i></font>
+
+  <font color="#008040"><i>// caluclate simulated values</i></font>
+  vehicleSpeed <font color="#000000">+= (</font>driveForce <font color="#000000">/</font> kVehicleWeight<font color="#000000">) *</font> kSystemTimeSec<font color="#000000">;</font>
+  <b>if</b> <font color="#000000">(</font>vehicleSpeed <font color="#000000">&lt;</font> <font color="#ff0080">0</font><font color="#000000">) {</font>
+    vehicleSpeed  <font color="#000000">=</font> <font color="#ff0080">0</font><font color="#000000">;</font>
+  <font color="#000000">}</font>
+  axleSpeed <font color="#000000">=</font> vehicleSpeed <font color="#000000">/</font> <font color="#ff0080">2</font> <font color="#000000">*</font> kWheelRadius <font color="#000000">*</font> kPI<font color="#000000">;</font>
+
+  <font color="#008040"><i>// calculate engine speed</i></font>
+  <b>if</b> <font color="#000000">(</font>transmissionRatio <font color="#000000">&gt;</font> <font color="#ff0080">0</font><font color="#000000">) {</font>
+    engineSpeed <font color="#000000">=</font> utilRange<font color="#000000">(</font> axleSpeed <font color="#000000">/</font> transmissionRatio<font color="#000000">,</font> kIdleEngineSpeed<font color="#000000">,</font> kMaxEngineSpeed<font color="#000000">);</font>
+  <font color="#000000">}</font>
+
+  <font color="#008040"><i>// update envVars</i></font>
+  putValue<font color="#000000">(</font> EvVECU_VehicleSpeed<font color="#000000">,</font> vehicleSpeed <font color="#000000">*</font> <font color="#ff0080">3.6</font> <font color="#000000">);</font>
+  putValue<font color="#000000">(</font> EvTECU_OutputShaftSpeed<font color="#000000">,</font> axleSpeed <font color="#000000">);</font>
+  putValue<font color="#000000">(</font> EvTECU_InputShaftSpeed<font color="#000000">,</font> engineSpeed <font color="#000000">);</font>
+  <b>if</b> <font color="#000000">(</font>transmissionRatio <font color="#000000">&gt;</font> <font color="#ff0080">0</font><font color="#000000">) {</font>
+    putValue<font color="#000000">(</font> EvEMS_SimulationMode<font color="#000000">,</font> <font color="#ff0080">1</font> <font color="#000000">);</font>
+    putValue<font color="#000000">(</font> EvEMS_EngineSpeed<font color="#000000">,</font> engineSpeed <font color="#000000">);</font>
+  <font color="#000000">}</font>
+  <b>else</b> <font color="#000000">{</font>
+    putValue<font color="#000000">(</font> EvEMS_SimulationMode<font color="#000000">,</font> <font color="#ff0080">0</font> <font color="#000000">);</font>
+  <font color="#000000">}</font>
+
+  setTimer<font color="#000000">(</font> SystemTimer<font color="#000000">,</font> kSystemTime <font color="#000000">);</font>
+<font color="#000000">}</font>
+<font color="#008040"><i>/*@@end*/</i></font>
+
+<font color="#008040"><i>/*@@startStart:Start:*/</i></font>
+on start
+<font color="#000000">{</font>
+  setTimer<font color="#000000">(</font> SystemTimer<font color="#000000">,</font> kSystemTime <font color="#000000">);</font>
+<font color="#000000">}</font>
+<font color="#008040"><i>/*@@end*/</i></font>
+
+<font color="#008040"><i>/*@@caplFunc:utilRange(float,float,float):*///function</i></font>
+<font color="#008040"><i>/*</i></font>
+<font color="#008040"><i> * Clip the value to the range of min and max</i></font>
+<font color="#008040"><i> */</i></font>
+<b>float</b> utilRange<font color="#000000">(</font> <b>float</b> value<font color="#000000">,</font> <b>float</b> min<font color="#000000">,</font> <b>float</b> max <font color="#000000">)</font>
+<font color="#000000">{</font>
+  <b>if</b> <font color="#000000">(</font>value <font color="#000000">&lt;</font> min<font color="#000000">)</font> <b>return</b> min<font color="#000000">;</font>
+  <b>if</b> <font color="#000000">(</font>value <font color="#000000">&gt;</font> max<font color="#000000">)</font> <b>return</b> max<font color="#000000">;</font>
+
+  <b>return</b> value<font color="#000000">;</font>
+<font color="#000000">}</font>
+<font color="#008040"><i>/*@@end*/</i></font>
+</font>
+</code></pre>
+<a href="#top"><font color="#0000ff">Top</a></font></body></html>
+
+<!-- Generated by Lore&#039;s Source to HTML Converter(http://www.newty.de/lsc/index.html) -->

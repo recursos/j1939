@@ -1,0 +1,1956 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+
+  
+
+
+  
+  <title>J1939 CAN bus spy, Chapt. 7: bug in Microchip App. Note J1939.c library</title>
+  <meta content="text/html; charset=unicode" http-equiv="Content-Type">
+
+
+  
+  <meta content="SAE J1939 and CAN bus - RS232 spy using Microchip PIC18F4580, CANoe, Xtm." name="description">
+
+
+  
+  <meta content="SAE J1939, CAN bus, CANbus, RS232, spy, simulation, SAE, Microchip, CANoe, Xtm" name="keywords">
+
+
+  
+  <style type="text/css">
+td { font-family: Verdana,courier;
+font-size: 10pt;
+}
+.myText { color: rgb(51, 153, 0);
+}
+.quoted { color: gray;
+}
+.highlite { background-color: rgb(255, 255, 51);
+}
+a:hover { text-decoration: underline;
+font-weight: bold;
+}
+.csharpcode
+{
+color: black;
+font-family: Courier New , Courier, Monospace;
+background-color: #ffffff;
+/*white-space: pre;*/
+}
+.csharpcode pre { margin: 0em; }
+.csharpcode .rem { color: #008000; }
+.csharpcode .kwrd { color: #0000ff; }
+.csharpcode .str { color: #006080; }
+.csharpcode .op { color: #0000c0; }
+.csharpcode .preproc { color: #cc6633; }
+.csharpcode .asp { background-color: #ffff00; }
+.csharpcode .html { color: #800000; }
+.csharpcode .attr { color: #ff0000; }
+.csharpcode .alt {
+background-color: #f4f4f4;
+width: 100%;
+margin: 0em;
+}
+.csharpcode .lnum { color: #606060; }
+  </style>
+</head>
+
+
+<body>
+
+
+<table style="width: 800px;">
+
+
+  <tbody>
+
+
+    <tr>
+
+
+      <td>
+      
+      <h3>Chapter 7<br>
+
+
+      </h3>
+
+
+      
+      <h3>J1939.c
+CAN Bus plus RS232&nbsp;(continued)</h3>
+
+
+      
+      <h4 style="text-align: center;">The "J1939 Address
+Claiming" Microchip sample bug </h4>
+
+
+      &lt;&lt; <a href="index.html">back to main
+page</a><br>
+
+
+&lt;&lt; <a href="index_6.html">previous chapter</a>
+(
+Michael Eisele's Xtm CAN bus simulator) <br>
+      <br>
+      <div style="text-align: right;">
+(Vector's AddressClaiming_CN.cfg sample bug) <a href="index_8.html">next chapter</a> &gt;&gt;
+
+      <br>
+      </div>
+
+
+      <br>
+
+
+      
+      <div align="center">
+      
+      <table style="width: 90%;">
+
+
+        <tbody>
+
+
+          <tr>
+
+
+            <td><span class="quoted">Abstract
+of
+the <a title="previous chapter" href="index_1.html">1rst
+Chapter</a>:<br>
+
+
+Microchip
+provided <a href="http://ww1.microchip.com/downloads/en/AppNotes/J1939.zip">source
+code</a> <img style="width: 15px; height: 16px;" alt="zip" src="images/zip.gif"> for <a href="http://ww1.microchip.com/downloads/en/AppNotes/00930a.pdf">J1939.c
+CAN library</a> <img style="width: 16px; height: 16px;" alt="pdf" src="images/pdf.gif"> (Kim
+Otten et al.), plus Application Maestro generated
+code&nbsp;UARTIntC.c, were used to implement a bare-bones system
+with a 2-node CAN bus, where node #129 upon receiving commands from
+#128
+to toggle a LED also output strings "ON" and "OFF" thru the RSR23.<br>
+
+
+            <br>
+
+
+Abstract of the <a href="index_2.html">2nd Chapter</a>:<br>
+
+
+            </span><span class="quoted">We kept the
+2 nodes #128 and #129 exchanging messages, and added a
+3rd
+node, #130, listening to them, and reporting to the PC. Everything
+addressed to our smart node #130 was send to our PC's
+Terminal program, dumping the affected RxBuffers to
+the UART.<br>
+
+
+            <br>
+
+
+Abstract of the <a href="index_3.html">3rd Chapter</a>:<br>
+
+
+Our smart node #130 was put in <span style="font-weight: bold;">ListenOnly</span>
+mode, all masks to zeros - a
+true "spy", now.<br>
+
+
+But because the firmware J1939.c generates so few messages, the overall
+result is not much exciting.<br>
+
+
+            <br>
+
+
+Abstract of the <a href="index_4.html">4th Chapter</a>:<br>
+
+
+            </span><span class="quoted">So we want
+to improve our basic firmware, but that means going deeper into
+understanding the </span><span style="font-weight: bold;" class="quoted">SAE
+J1939 protocol</span><span class="quoted">
+(automotive, commercial vehicles, etc.).</span><br class="quoted">
+
+
+            <span class="quoted">We could
+use some help in
+that, and luckily there are at least 2 free
+"demos" available which we can use to simulate the bus.<br>
+
+
+            <br>
+
+
+Abstract of the <a href="index_5.html">5th Chapter</a>:<br>
+
+
+            </span><span class="quoted">While
+learning </span><span style="font-weight: bold;" class="quoted">CAN/J1939</span><span class="quoted">
+a&nbsp;</span><span style="font-weight: bold;" class="quoted">CAN/J1939
+simulator</span><span class="quoted"> is a nice
+tool, among others, to test if the </span><span style="font-weight: bold;" class="quoted">NMT</span>
+behaviour
+(network management) you have coded and believe is OK, is indeed
+conforming to the SAE standard.<br class="quoted">
+
+
+            <span class="quoted">CANoe simulator is a
+wonderful tool for that, and on top of
+its price can't be beaten (yes, the limited but functional demo is
+free). We had
+a look at just a small parcel of it.<br>
+
+
+            <br>
+
+
+            </span><span class="quoted">Abstract of
+the <a href="index_6.html">6th Chapter</a>:<br>
+
+
+            </span><span class="quoted"><span style="font-weight: bold;"></span></span><span style="font-weight: bold;" class="quoted"></span><span class="quoted"> This time we played with Michael Eisele's <span style="font-weight: bold;">Xtm</span>, using it as a </span><span style="font-weight: bold;" class="quoted">CAN/J1939
+simulator</span><span class="quoted">.<br>
+
+
+Michael kindly prepared a sample implementing about the same
+functionality as the CANoe's example of the previous chapter - the
+Address
+Claimed message of the J1939 Address Claiming NMT procedure.</span><span class="quoted"></span><br>
+
+
+            <br>
+
+
+            <span class="quoted"></span><span class="quoted"></span></td>
+
+
+          </tr>
+
+
+        
+        </tbody>
+      
+      </table>
+
+
+      <br>
+
+
+      <br>
+
+
+      
+      <table style="width: 70%;" border="0" cellpadding="2" cellspacing="2">
+
+
+        <tbody>
+
+
+          <tr>
+
+
+            <td style="background-color: rgb(224, 224, 224); text-align: left;">Don't
+want to miss the next chapter? just drop me
+an email to <span style="font-weight: bold;">recursos.pt@gmail.com</span>
+subject: J1939 CAN, and I will notify you.<br>
+
+
+No other use will be made of your e-mail address.</td>
+
+
+          </tr>
+
+
+        
+        </tbody>
+      
+      </table>
+
+
+      </div>
+
+
+      <br>
+
+
+      <br>
+
+
+After too much time playing with the simulation software(s), and having
+become familiar with the basic <span style="font-weight: bold;">NMT</span>
+procedures of <span style="font-weight: bold;">J1939</span>,
+it downed on me that Microchip's provided <a href="http://ww1.microchip.com/downloads/en/AppNotes/J1939.zip">source
+code</a> <img style="width: 15px; height: 16px;" alt="zip" src="images/zip.gif"> for <a href="http://ww1.microchip.com/downloads/en/AppNotes/00930a.pdf">J1939.c
+CAN library</a> <img style="width: 16px; height: 16px;" alt="pdf" src="images/pdf.gif"> has a nasty bug.<br>
+
+
+      <br>
+
+
+Not only that, but also Vector's CAPL code for their <span style="font-weight: bold;">AddressClaiming_CN.cfg</span>
+sample, much touted by myself in&nbsp;<a href="index_5.html">Chapter
+5</a> suffers exactly the same bug!<br>
+
+
+      <br>
+
+
+Let us start with Microchip's J1939.c CAN library (app. note 930):
+      
+      <ol>
+
+
+        <br>
+
+
+        <li> <a href="#The_J1939_Address_Claiming_Microchip_sample">The
+"J1939 Address Claiming" Microchip sample bug</a> </li>
+
+
+        <li><a href="#hardware_configuration_to_test_the_J1939.c_CAN_library">Hardware
+configuration to test the </a><a href="#hardware_configuration_to_test_the_J1939.c_CAN_library">J1939.c
+CAN library</a></li>
+
+
+        <li><a href="#Function_CompareName__">The
+bug in the&nbsp;</a><a href="#Function_CompareName__">Function
+          <span style="color: rgb(51, 51, 255);">CompareName
+()</span></a></li>
+
+
+        <li><a href="#J1939.c_CAN_library_is_a_nice_piece_of">J1939.c
+CAN library is a nice piece of code</a></li>
+
+
+        <li><a href="#What_is_next">What's next?</a>
+        </li>
+
+
+      
+      </ol>
+
+
+      
+      <hr style="width: 100%; height: 2px;">
+      
+      <h4><span style="font-weight: bold;"><a name="The_J1939_Address_Claiming_Microchip_sample"></a></span><br>
+
+
+      <br>
+
+
+      </h4>
+
+
+      
+      <h4><span style="font-weight: bold;">1
+- The
+"J1939 Address Claiming" Microchip sample bug </span></h4>
+
+
+      <br>
+
+
+Saddly to say, our most beloved Microchip provided <a href="http://ww1.microchip.com/downloads/en/AppNotes/J1939.zip">source
+code</a> <img style="width: 15px; height: 16px;" alt="zip" src="images/zip.gif"> for <a href="http://ww1.microchip.com/downloads/en/AppNotes/00930a.pdf">J1939.c
+CAN library</a> <img style="width: 16px; height: 16px;" alt="pdf" src="images/pdf.gif"> has a serious bug.<br>
+
+
+      <br>
+
+
+I
+wonder why nobody has already pointed that (as far as I know), since
+Microchip's source
+code has been around since at least 2004. Either nobody is
+using it, or nobody payed much attention.<br>
+
+
+      <br>
+
+
+So, what is wrong with the <a href="http://ww1.microchip.com/downloads/en/AppNotes/00930a.pdf">J1939.c
+CAN library</a> ?<br>
+
+
+      <br>
+
+
+The most basic feature of J1939 is the <span style="font-weight: bold;">Address Claiming </span>negotiation:<br>
+
+
+      <br>
+
+
+      
+      <div style="margin-left: 40px;">No two nodes can
+have the same <span style="font-weight: bold;">Source
+Address</span>, therefore according to <span style="font-weight: bold;">SAE J1939-81</span>, a node
+must successfully claim an address according to the procedures
+explained in section <span style="font-weight: bold;">4.2
+&ldquo;Network Management Procedure&rdquo;</span> prior
+to sending any other messages on the network.<br>
+
+
+      </div>
+
+
+      <br>
+
+
+In <span style="font-weight: bold;">SAE J1939-81</span>,
+the key to resolve any contention between 2 nodes
+claiming the same address is to use the node's<span style="font-weight: bold;"> NAME</span>s which must
+always
+be unique:<br>
+
+
+      
+      <div align="center"> <br>
+
+
+      
+      <table style="background-color: rgb(238, 238, 238); width: 90%;" border="0" cellpadding="2" cellspacing="2">
+
+
+        <tbody>
+
+
+          <tr>
+
+
+            <td><span style="font-weight: bold;">3.1.3
+Addresses and NAME</span> (J1939/81 and Appendix B)<br>
+
+
+            <br>
+
+
+Each ECU on the network will have at least one <span style="font-weight: bold;">name</span> and one <span style="font-weight: bold;">address</span>
+associated with it. (...) The address of an ECU defines a specific
+communications source or destination for messages, the name includes
+identification of the primary function performed at that address and
+adds an indication of the instance of that functionality in the event
+that multiple ECUs with the same primary function coexist on the same
+network. As many as 254 different ECUs of the same function can coexist
+on the network, each identified by their own address and name.<br>
+
+
+To uniquely name each ECU, J1939 defines a 64 bit <span style="font-weight: bold;">NAME</span> consisting of
+the fields shown in Table 1.(...)<br>
+
+
+            <br>
+
+
+In general, most ECUs will use their Preferred Addresses immediately
+upon power up. A specific procedure (defined in J1939/81 and elaborated
+on in J1939/01) for assigning addresses after powerup is used to
+resolve any conflicts that may occur. Each ECU must be capable of
+announcing which address(es) it intends to use.<br>
+
+
+            </td>
+
+
+          </tr>
+
+
+        
+        </tbody>
+      
+      </table>
+
+
+      </div>
+
+
+      <br>
+
+
+      <br>
+
+
+      <br>
+
+
+      
+      <center> <span style="font-size: 9.7pt; color: rgb(0, 0, 0);">Table
+1: NAME Fields<br>
+
+
+      </span>
+      
+      <table style="text-align: right; background-color: rgb(238, 238, 238); width: 90%;" border="1" cellpadding="4" cellspacing="0" frame="box" rules="all">
+
+
+        <tbody>
+
+
+          <tr valign="top">
+
+
+            <td style="width: 70px;"><span style="font-size: 9pt; color: rgb(0, 0, 0);">Arbitrary
+Address
+Capable</span></td>
+
+
+            <td style="width: 70px;"><span style="font-size: 9pt; color: rgb(0, 0, 0);">Industry Group</span></td>
+
+
+            <td style="width: 70px; background-color: rgb(238, 238, 238);"><span style="font-size: 9pt; color: rgb(0, 0, 0);">Vehicle System
+Instance</span></td>
+
+
+            <td style="width: 70px;"><span style="font-size: 9pt; color: rgb(0, 0, 0);">Vehicle System</span></td>
+
+
+            <td style="width: 70px;"><span style="font-size: 9pt; color: rgb(0, 0, 0);">Reserved</span></td>
+
+
+            <td style="width: 70px;"><span style="font-size: 9pt; color: rgb(0, 0, 0);">Function</span></td>
+
+
+            <td style="width: 70px;"><span style="font-size: 9pt; color: rgb(0, 0, 0);">Function
+Instance</span></td>
+
+
+            <td style="width: 70px;"><span style="font-size: 9pt; color: rgb(0, 0, 0);">ECU Instance</span></td>
+
+
+            <td><span style="font-size: 9pt; color: rgb(0, 0, 0);">Manufacturer
+Code</span></td>
+
+
+            <td><span style="font-size: 9pt; color: rgb(0, 0, 0);">Identity Number</span></td>
+
+
+          </tr>
+
+
+          <tr>
+
+
+            <td><span style="font-size: 9pt; font-weight: normal; color: rgb(0, 0, 0);">1
+bit</span></td>
+
+
+            <td><span style="font-size: 9pt; font-weight: normal; color: rgb(0, 0, 0);">3
+bit</span></td>
+
+
+            <td><span style="font-size: 9pt; font-weight: normal; color: rgb(0, 0, 0);">4
+bit</span></td>
+
+
+            <td><span style="font-size: 9pt; font-weight: normal; color: rgb(0, 0, 0);">7
+bit</span></td>
+
+
+            <td><span style="font-size: 9pt; font-weight: normal; color: rgb(0, 0, 0);">1
+bit</span></td>
+
+
+            <td><span style="font-size: 9pt; font-weight: normal; color: rgb(0, 0, 0);">8
+bit</span></td>
+
+
+            <td><span style="font-size: 9pt; font-weight: normal; color: rgb(0, 0, 0);">5
+bit</span></td>
+
+
+            <td><span style="font-size: 9pt; font-weight: normal; color: rgb(0, 0, 0);">3
+bit</span></td>
+
+
+            <td><span style="font-size: 9pt; font-weight: normal; color: rgb(0, 0, 0);">11
+bit</span></td>
+
+
+            <td><span style="font-size: 9pt; font-weight: normal; color: rgb(0, 0, 0);">21
+bit</span></td>
+
+
+          </tr>
+
+
+          <tr>
+
+
+            <td colspan="3" rowspan="1"><span style="font-size: 9pt; font-weight: normal; color: rgb(0, 0, 0);">Byte
+8</span><span style="font-size: 9pt; font-weight: normal; color: rgb(0, 0, 0);"><br>
+
+
+            </span></td>
+
+
+            <td colspan="2" rowspan="1"><span style="font-size: 9pt; font-weight: normal; color: rgb(0, 0, 0);">Byte
+7</span></td>
+
+
+            <td><span style="font-size: 9pt; font-weight: normal; color: rgb(0, 0, 0);">Byte
+6</span></td>
+
+
+            <td colspan="2" rowspan="1"><span style="font-size: 9pt; font-weight: normal; color: rgb(0, 0, 0);">Byte
+5</span></td>
+
+
+            <td colspan="2" rowspan="1"><span style="font-size: 9pt; font-weight: normal; color: rgb(0, 0, 0);">Byte
+4 to </span><span style="font-size: 9pt; font-weight: normal; color: rgb(0, 0, 0);">Byte&nbsp;1</span></td>
+
+
+          </tr>
+
+
+        
+        </tbody>
+      
+      </table>
+
+
+      
+      <p></p>
+
+
+      </center>
+
+
+Now, when it comes to comparing the 64 bit <span style="font-weight: bold;">NAME</span>s, &nbsp;<span style="font-weight: bold;">SAE J1939-81</span> states:<br>
+
+
+      <br>
+
+
+      
+      <div align="center"> <br>
+
+
+      
+      <table style="background-color: rgb(238, 238, 238); width: 90%;" border="0" cellpadding="2" cellspacing="2">
+
+
+        <tbody>
+
+
+          <tr>
+
+
+            <td>The byte ordering of the <span style="font-weight: bold;">NAME</span> fields in a CAN
+message is shown in table
+2, and is arranged to allow the <span style="font-weight: bold;">NAME</span>
+to be treated as a number in a
+manner consistent with SAE J1939-71. The entire 8 byte <span style="font-weight: bold;">NAME</span> is used as
+a single numeric value in arbitration processes when multiple CAs
+attempt to claim the same address (see 4.4.3.3).<br>
+
+
+            </td>
+
+
+          </tr>
+
+
+        
+        </tbody>
+      
+      </table>
+
+
+      </div>
+
+
+      <br>
+
+
+      
+      <center><br>
+
+
+      <br>
+
+
+Table 2: Field positions within NAME:<br>
+
+
+      <br>
+
+
+      
+      <table style="text-align: left; width: 70%;" border="1" cellpadding="4" cellspacing="0" frame="box" rules="none">
+
+
+        <tbody>
+
+
+          <tr bgcolor="#cccccc" valign="top">
+
+
+            <td><span style="font-size: 9pt; color: rgb(0, 0, 0);"><span style="font-weight: bold;">Byte</span>&nbsp;</span><span style="font-size: 9.7pt; font-weight: normal; color: rgb(0, 0, 0);"></span></td>
+
+
+            <td><span style="font-size: 9pt; color: rgb(0, 0, 0); font-weight: bold;">Bits</span><span style="font-size: 9.7pt; font-weight: normal; color: rgb(0, 0, 0);"></span></td>
+
+
+            <td><span style="font-size: 9pt; color: rgb(0, 0, 0);"><span style="font-weight: bold;">Position
+of Most Significant bit</span> </span><span style="font-size: 9.7pt; font-weight: normal; color: rgb(0, 0, 0);"></span></td>
+
+
+            <td style="vertical-align: top; font-weight: bold; background-color: rgb(204, 204, 204);">Description</td>
+
+
+            <td style="vertical-align: top; font-weight: bold; background-color: rgb(204, 204, 204);">Note:</td>
+
+
+          </tr>
+
+
+          <tr bgcolor="#eeeeee" valign="top">
+
+
+            <td style="vertical-align: top;">1</td>
+
+
+            <td style="vertical-align: top;"><span style="font-size: 9pt; color: rgb(0, 0, 0);"></span><span style="font-size: 9.7pt; font-weight: normal; color: rgb(0, 0, 0);">8-1</span></td>
+
+
+            <td style="vertical-align: top;">8</td>
+
+
+            <td style="vertical-align: top;">Least
+significant byte of Identity Number</td>
+
+
+            <td style="vertical-align: top; font-weight: bold;">Bit
+8 is the
+bit sent closest to the DLC bits of
+the message.</td>
+
+
+          </tr>
+
+
+          <tr valign="top">
+
+
+            <td>2</td>
+
+
+            <td>8-1</td>
+
+
+            <td>8</td>
+
+
+            <td>Second
+byte
+of Identity Number</td>
+
+
+            <td></td>
+
+
+          </tr>
+
+
+          <tr bgcolor="#eeeeee" valign="top">
+
+
+            <td colspan="1" rowspan="2" style="vertical-align: top;">3</td>
+
+
+            <td>8-6</td>
+
+
+            <td>8</td>
+
+
+            <td>Least
+significant 3 bits of Manufacturer Code</td>
+
+
+            <td></td>
+
+
+          </tr>
+
+
+          <tr bgcolor="#eeeeee" valign="top">
+
+
+            <td>5-1</td>
+
+
+            <td>5</td>
+
+
+            <td>Most
+significant 5 bits of Identity Number</td>
+
+
+            <td></td>
+
+
+          </tr>
+
+
+          <tr valign="top">
+
+
+            <td>4</td>
+
+
+            <td>8-1</td>
+
+
+            <td>8</td>
+
+
+            <td>Most
+significant 8 bits of Manufacturer Code</td>
+
+
+            <td></td>
+
+
+          </tr>
+
+
+          <tr bgcolor="#eeeeee" valign="top">
+
+
+            <td colspan="1" rowspan="2" style="vertical-align: top;">5</td>
+
+
+            <td>8-4</td>
+
+
+            <td>8</td>
+
+
+            <td>Function
+Instance</td>
+
+
+            <td></td>
+
+
+          </tr>
+
+
+          <tr bgcolor="#eeeeee" valign="top">
+
+
+            <td>3-1</td>
+
+
+            <td>3</td>
+
+
+            <td>ECU
+Instance</td>
+
+
+            <td></td>
+
+
+          </tr>
+
+
+          <tr valign="top">
+
+
+            <td>6</td>
+
+
+            <td>8-1</td>
+
+
+            <td>8</td>
+
+
+            <td>Function</td>
+
+
+            <td></td>
+
+
+          </tr>
+
+
+          <tr bgcolor="#eeeeee" valign="top">
+
+
+            <td colspan="1" rowspan="2" style="vertical-align: top;">7</td>
+
+
+            <td>8-2</td>
+
+
+            <td>8</td>
+
+
+            <td>Vehicle
+System</td>
+
+
+            <td></td>
+
+
+          </tr>
+
+
+          <tr bgcolor="#eeeeee" valign="top">
+
+
+            <td>1</td>
+
+
+            <td>-</td>
+
+
+            <td>Reserved</td>
+
+
+            <td></td>
+
+
+          </tr>
+
+
+          <tr valign="top">
+
+
+            <td style="vertical-align: top;" colspan="1" rowspan="3">8</td>
+
+
+            <td>8</td>
+
+
+            <td>-</td>
+
+
+            <td>Arbitrary
+Address Capable</td>
+
+
+            <td></td>
+
+
+          </tr>
+
+
+          <tr valign="top">
+
+
+            <td>7-5</td>
+
+
+            <td>7</td>
+
+
+            <td>Industry
+Group</td>
+
+
+            <td></td>
+
+
+          </tr>
+
+
+          <tr valign="top">
+
+
+            <td>4-1</td>
+
+
+            <td>4</td>
+
+
+            <td>Vehicle
+System Instance</td>
+
+
+            <td style="font-weight: bold;">Bit 1
+is the
+last of the data bits sent and is
+closest to the CRC in the message.</td>
+
+
+          </tr>
+
+
+        
+        </tbody>
+      
+      </table>
+
+
+      <br>
+
+
+      </center>
+
+
+      <br>
+
+
+      
+      <p style="line-height: 16px;"><span style="font-size: 9.7pt; font-weight: normal; color: rgb(0, 0, 0);">Notice
+that "</span>Byte1, Bit
+8 is the
+bit sent closest to the DLC bits of
+the message<span style="font-size: 9.7pt; font-weight: normal; color: rgb(0, 0, 0);">",
+and that "Byte8, Bit
+1 is the last of the data bits sent and is closest to the CRC in the
+message" (SAE uses bits 8..1 where we use bits 7...0).<br>
+
+
+This really means that the bytes are output to the CAN bus in the
+reverse order of their priority.</span></p>
+
+
+      
+      <div class="Sect">That the <span style="font-weight: bold;">Arbitrary Address Capable</span>
+bit is the most significant makes all sense, as a node (in J1939
+parlance, a Controller Application (<span style="font-weight: bold;">CA</span>))
+with such capability can afford to loose arbitration for a less endowed
+node (!):<br>
+
+
+      <br>
+
+
+      <br>
+
+
+      
+      <div align="center"> <br>
+
+
+      
+      <table style="background-color: rgb(238, 238, 238); width: 90%;" border="0" cellpadding="2" cellspacing="2">
+
+
+        <tbody>
+
+
+          <tr>
+
+
+            <td>3.3.2 <span style="font-weight: bold;">Arbitrary
+Address Capable CA</span><br>
+
+
+An Arbitrary Address Capable CA is one that can select its source
+address from any appropriate SA<br>
+
+
+(including those in the range 128 to 247 inclusive) based on internal
+algorithms, and then claim that<br>
+
+
+address. This CA, in cases of address conflict, is also able to
+re-calculate its address and re-claim (unless all 120 of the addresses
+between 128 and 247 are used). The value in the Arbitrary Address
+Capable field in the NAME (See Section 4.1.1.2) indicates whether or
+not a CA has this capability. This capability is needed particularly
+for CAs that are expected to have multiple instances of the same device
+on a single vehicle. In these cases, the Arbitrary Address Capable CA
+will be the one to lose arbitration for a Preferred Address since the
+setting of the Arbitrary Address Capable bit in its NAME lowers its
+priority for address claim. This is correct behavior since its ability
+to operate correctly on the network will not be affected by the loss of
+arbitration. Note that if its function is one that would normally use a
+Preferred Address in the lower 128, it will claim that address first.
+Only upon losing arbitration during Address Claim will it claim an
+unused<br>
+
+
+address from the range above 128.<br>
+
+
+            <br>
+
+
+(...)<br>
+
+
+            <br>
+
+
+4.1.1.2 <span style="font-weight: bold;">Arbitrary
+Address Capable</span> Field<br>
+
+
+This 1-bit field indicates whether a CA can use an arbitrary source
+address to resolve an address claim conflict. If this bit is set to
+&ldquo;1&rdquo;, the CA will resolve an address conflict with a
+CA whose <span style="font-weight: bold;">NAME</span>
+has a higher priority (lower numeric value) by selecting
+an arbitrary source address from the range 128 to 247 inclusive and
+claiming that source address.<br>
+
+
+A self-configurable CA that computes its
+address but can claim only from a more restricted set of addresses is
+not considered arbitrary address capable (e.g. On-Highway Trailers.)<br>
+
+
+See section 4.2 of this document for details of the address claim
+process.<br>
+
+
+            <br>
+
+
+            </td>
+
+
+          </tr>
+
+
+        
+        </tbody>
+      
+      </table>
+
+
+      </div>
+
+
+      <br>
+
+
+      
+      <hr style="width: 100%; height: 2px;"><a name="hardware_configuration_to_test_the_J1939.c_CAN_library"></a>
+      
+      <h4>&nbsp;2 - Hardware configuration to test the
+J1939.c
+CAN library</h4>
+
+
+      <br>
+
+
+Our hardware configuration to test the <a href="http://ww1.microchip.com/downloads/en/AppNotes/00930a.pdf">J1939.c
+CAN library</a>&nbsp;was this:<br>
+
+
+      
+      <center><br>
+
+
+      
+      <table style="text-align: left; width: 80%;" border="0" cellpadding="2" cellspacing="2">
+
+
+        <tbody>
+
+
+          <tr valign="top">
+
+
+            <td><img style="width: 354px; height: 236px;" alt="2 PIC CAN bus" title="2 PIC CAN bus" src="images/chapt_7/2_pic_can.png"></td>
+
+
+            <td>&nbsp;J1939_STARTING_ADDRESS<br>
+
+
+&nbsp;J1939_ARBITRARY_ADDRESS<br>
+
+
+&nbsp;J1939_INDUSTRY_GROUP<br>
+
+
+&nbsp;J1939_VEHICLE_INSTANCE&nbsp;<br>
+
+
+&nbsp;J1939_VEHICLE_SYSTEM<br>
+
+
+&nbsp;J1939_FUNCTION<br>
+
+
+&nbsp;J1939_FUNCTION_INSTANCE<br>
+
+
+&nbsp;J1939_ECU_INSTANCE<br>
+
+
+&nbsp;J1939_MANUFACTURER_CODE<br>
+
+
+&nbsp;J1939_IDENTITY_NUMBER<br>
+
+
+            </td>
+
+
+            <td><span style="font-weight: bold;">128</span><br>
+
+
+0<br>
+
+
+2<br>
+
+
+10<br>
+
+
+5<br>
+
+
+98<br>
+
+
+11<br>
+
+
+2<br>
+
+
+321<br>
+
+
+1234<span style="font-weight: bold;">4</span></td>
+
+
+            <td><span style="font-weight: bold;">129</span><br>
+
+
+0<br>
+
+
+2<br>
+
+
+10<br>
+
+
+5<br>
+
+
+98<br>
+
+
+11<br>
+
+
+2<br>
+
+
+321<br>
+
+
+1234<span style="font-weight: bold;">5</span></td>
+
+
+          </tr>
+
+
+          <tr>
+
+
+            <td colspan="4" rowspan="1">2 PIC CAN
+bus + RS232 configuration to test <a href="http://ww1.microchip.com/downloads/en/AppNotes/00930a.pdf">J1939.c
+CAN library</a> - the nodes' <span style="font-weight: bold;">NAME</span>s
+differ only by the J1939_IDENTITY_NUMBER (12344 for node A, 12345 for
+node B)</td>
+
+
+          </tr>
+
+
+        
+        </tbody>
+      
+      </table>
+
+
+      <br>
+
+
+      </center>
+
+
+Notice that this generates the folowing 64 bit NAMEs:<br>
+
+
+      <br>
+
+
+      
+      <div style="text-align: center;">&nbsp;2A 0A 62
+5A 28 20 30 38 (#128)<br>
+
+
+&nbsp;2A 0A 62 5A 28 20 30 39 (#129)<br>
+
+
+      </div>
+
+
+      <br>
+
+
+Reading the source code raised the first suspicions.<br>
+
+
+But as we like empirical stuff <img style="width: 15px; height: 16px;" alt="thumbs_up" title="thumbs_up" src="images/thumbs-up.gif">, we
+traced the bug in a more difficult
+way:<br>
+
+
+      
+      <ol>
+
+
+        <li>our breadboard assembly was downsized to have just 2
+functional
+PIC18F4580, one of them with the UART interface connected to the PC</li>
+
+
+        <li>the <span style="font-weight: bold;">J1939
+NAME</span>s and <span style="font-weight: bold;">Source
+Addresses</span> were matched to the <a href="index_6.html">simulation
+run
+with Michael Eisele's <span style="font-weight: bold;">Xtm</span></a>,
+as we got quite familiar with these bytes by
+now</li>
+
+
+        <li>added a few instructions to <span style="font-weight: bold; color: rgb(51, 51, 255);">compareNames()</span>
+function, see below the <span class="highlite">highlighted
+code</span></li>
+
+
+        <li>so that while reacting to the generated <span style="font-weight: bold;">Address Claimed</span>
+message, the CAN - UART
+PIC compareNames() function outputs the values of the compared <span style="font-weight: bold;">NAME</span>s
+arrays thru the serial port</li>
+
+
+        <li>which we then colect in the <a href="index_1.html#Bray_Terminal_v19b">PC's terminal program</a></li>
+
+
+      
+      </ol>
+
+
+      <br>
+
+
+      
+      <hr style="width: 100%; height: 2px;"> <a name="Function_CompareName__"></a><br>
+
+
+      
+      <h4>3 - The bug in the Function <span style="color: rgb(51, 51, 255);">CompareName
+()</span></h4>
+
+
+      <br>
+
+
+Running the code in <span style="font-weight: bold;">MPLAB</span>
+simulator, then&nbsp;watching the
+array <span style="font-weight: bold;">CA_Name</span>:<br>
+
+
+      <br>
+
+
+      
+      <center> <img style="width: 401px; height: 282px;" alt="MPLAB Watch: CA_Name" title="MPLAB Watch: CA_Name" src="images/chapt_7/watch_ca_name.png"><br>
+
+
+      </center>
+
+
+      <br>
+
+
+Again, notice <span style="font-size: 9.7pt; font-weight: normal; color: rgb(0, 0, 0);">that
+the <span style="font-weight: bold;">NAME</span>'s
+bytes are output to the CAN bus in the reverse order of their priority.</span><br>
+
+
+If you remember the previous chapter, bit 7 of that last byte <span style="font-weight: bold;">CA_name[7]</span> = <span style="color: rgb(255, 102, 102);">0x2A</span> is
+the place where the <span style="font-weight: bold;">Arbitrary
+Address Capable</span> bit (in our case it is 0) ended...<br>
+
+
+      <br>
+
+
+In the PC's&nbsp;<a href="http://bray.velenje.cx/avr/terminal/">Terminal
+v1.9b</a> (provided by Bray++) window we collect the folowing
+strings, dumped by our UART:<br>
+
+
+      <br>
+
+
+      
+      <div align="center">
+      
+      <table style="width: 80%;" border="0" cellpadding="2" cellspacing="0">
+
+
+        <tbody>
+
+
+          <tr>
+
+
+            <td>43 41 4E 55 61 72 74
+30 30 37 0D&nbsp;</td>
+
+
+            <td>our "splash" <span style="color: rgb(0, 153, 0); font-weight: bold;">CANUart007</span>
+start-up
+string</td>
+
+
+          </tr>
+
+
+          <tr>
+
+
+            <td>67 7A FF 80 08 38 30 20 28 5A 62 0A 2A</td>
+
+
+            <td> CAN address negociation&nbsp;node 0x80</td>
+
+
+          </tr>
+
+
+          <tr>
+
+
+            <td>38 30 20 28 5A 62 0A 2A</td>
+
+
+            <td><span style="color: rgb(51, 51, 255);">CompareName
+()</span> <span class="highlite">Uart
+output shows wrong order</span></td>
+
+
+          </tr>
+
+
+          <tr>
+
+
+            <td>67 7A FF FE 08 38 30 20 28 5A 62 0A 2A</td>
+
+
+            <td> CANnot claim address</td>
+
+
+          </tr>
+
+
+        
+        </tbody>
+      
+      </table>
+
+
+      </div>
+
+
+      <br>
+
+
+      <br>
+
+
+      
+      <center>
+      
+      <table>
+
+
+        <tbody>
+
+
+          <tr>
+
+
+            <td>
+            
+            <div class="csharpcode">
+            
+            <pre></pre>
+
+
+            
+            <pre class="alt"><span class="rem">/*********************************************************************</span></pre>
+
+
+            
+            <pre><span class="rem">CompareName</span></pre>
+
+
+            
+            <pre class="alt"><span class="rem"></span></pre>
+
+
+            
+            <pre><span class="rem">This routine compares the passed in array data NAME with the CA's</span></pre>
+
+
+            
+            <pre class="alt"><span class="rem">current NAME as stored in CA_Name.</span></pre>
+
+
+            
+            <pre><span class="rem"></span></pre>
+
+
+            
+            <pre class="alt"><span class="rem">Parameters: unsigned char * Array of NAME bytes</span></pre>
+
+
+            
+            <pre><span class="rem">Return: -1 - CA_Name is less than the data</span></pre>
+
+
+            
+            <pre class="alt"><span class="rem"> 0 - CA_Name is equal to the data</span></pre>
+
+
+            
+            <pre><span class="rem"> 1 - CA_Name is greater than the data</span></pre>
+
+
+            
+            <pre class="alt"><span class="rem">*********************************************************************/</span></pre>
+
+
+            
+            <pre>signed <span class="kwrd">char</span> CompareName( unsigned <span class="kwrd">char</span> *OtherName )</pre>
+
+
+            
+            <pre class="alt">{</pre>
+
+
+            
+            <pre> unsigned <span class="kwrd">char</span> i;</pre>
+
+
+            
+            <pre class="alt">&nbsp;</pre>
+
+
+            
+            <pre> <span class="kwrd">for</span> (i = 0; (i&lt;J1939_DATA_LENGTH) &amp;&amp; (OtherName[i] == CA_Name[i]);</pre>
+
+
+            
+            <pre class="alt"> <span class="highlite">UARTIntPutChar(CA_Name[i])</span>,</pre>
+
+
+            
+            <pre> i++);</pre>
+
+
+            
+            <pre class="alt">&nbsp;</pre>
+
+
+            
+            <pre> <span class="kwrd">if</span> (i == J1939_DATA_LENGTH)</pre>
+
+
+            
+            <pre class="alt"> <span class="kwrd">return</span> 0;</pre>
+
+
+            
+            <pre> <span class="kwrd">else</span> <span class="kwrd">if</span> (CA_Name[i] &lt; OtherName[i] )</pre>
+
+
+            
+            <pre class="alt"> <span class="kwrd">return</span> -1;</pre>
+
+
+            
+            <pre> <span class="kwrd">else</span></pre>
+
+
+            
+            <pre class="alt"> <span class="kwrd">return</span> 1;</pre>
+
+
+            
+            <pre>}</pre>
+
+
+            
+            <pre class="alt"></pre>
+
+
+            </div>
+
+
+            </td>
+
+
+          </tr>
+
+
+          <tr>
+
+
+            <td><br>
+
+
+Function <span style="color: rgb(51, 51, 255);">CompareName
+()</span>
+with <span class="highlite">code added</span> to
+output CA_Name[i] bytes thru<br>
+
+
+the serial port</td>
+
+
+          </tr>
+
+
+        
+        </tbody>
+      
+      </table>
+
+
+      </center>
+
+
+      <br>
+
+
+The error in the code is that instead of comparing from <span style="font-weight: bold;">Name[0]</span> up to <span style="font-weight: bold;">Name[7]</span>
+it should be done in reverse, from <span style="font-weight: bold;">Name[7]</span>
+down to <span style="font-weight: bold;">Name[0]</span>
+-
+because <span style="font-size: 9.7pt; font-weight: normal; color: rgb(0, 0, 0);">the
+      <span style="font-weight: bold;">NAME</span>'s
+bytes are output to the CAN bus in the reverse order of their priority.<br>
+
+
+With the code "as is", the contention is wrongly decided by first
+looking at the 64th bit, in the low byte of </span><span style="font-weight: bold;">Identity Number</span>,
+then the second byte of <span style="font-weight: bold;">Identity
+Number</span> etc. etc., but <span style="font-weight: bold;">SAE
+J1939-81</span> says it should start by the 1rst bit, our old <span style="font-weight: bold;">Arbitrary
+Address Capable.</span><br>
+
+
+      <br>
+
+
+      
+      <hr style="width: 100%; height: 2px;"><br>
+
+
+      
+      <h4><a name="J1939.c_CAN_library_is_a_nice_piece_of"></a></h4>
+
+
+      
+      <h4>4 - Nevertheless&nbsp;<a href="http://ww1.microchip.com/downloads/en/AppNotes/00930a.pdf">J1939.c
+CAN library</a> is a nice piece of code</h4>
+
+
+Don't get me wrong, other then the Function <span style="color: rgb(51, 51, 255);">CompareName
+()</span> bug, on the whole this is the best (free) piece of
+source code I came upon, related to J1939.<br>
+
+
+      <br>
+
+
+And if you didn't notice yet, let me show you that it is prepared to be
+integrated in Application Maestro, which is quite useful to generate
+code for diefferent configurations.<br>
+
+
+      <br>
+
+
+To see it yourself, grab <span style="font-weight: bold;">Application
+Maestro</span> from Microchip's site,
+install and launch (or check if you already have it at \Program
+Files\Microchip\MpAM):<br>
+
+
+      <br>
+
+
+      <img style="width: 789px; height: 480px;" alt="Application Maestro" title="Application Maestro" src="images/chapt_7/app_maestro.png"><br>
+
+
+      <br>
+
+
+But it is not showing <span style="font-weight: bold;">CAN
+J1939</span>? Well, it needs some customization.<br>
+
+
+If
+you have your Microchip's
+J1939.c
+CAN library <a href="http://ww1.microchip.com/downloads/en/AppNotes/J1939.zip">source
+code</a> <img style="width: 15px; height: 16px;" alt="zip" src="images/zip.gif"> available, have a
+look at the .zip file, and there you find:<br>
+
+
+      <br>
+
+
+      
+      <div style="text-align: center;"><img style="width: 508px; height: 347px;" alt="J1939.zip" title="J1939.zip" src="images/chapt_7/j1939_zip.png"><br>
+
+
+      </div>
+
+
+      <br>
+
+
+      <br>
+
+
+      <br>
+
+
+The content of a module is defined in the <span style="font-weight: bold;">Application Maestro</span>
+Software
+script file named j1939.cls, which is located at the root level of the
+Modules folder.<br>
+
+
+The <span style="font-weight: bold;">Application Maestro</span>
+Software uses this file to provide information
+for the Available Module pane (name, revision level, language format
+and descriptive comments), as well as define the valid range of the
+configurable parameters and the output for the module.<br>
+
+
+      <br>
+
+
+So, extract the above files to \Program
+Files\Microchip\MpAM\Modules\J1939 then move j1939.cls up one level to
+folder \Modules.<br>
+
+
+      <br>
+
+
+      
+      <div style="margin-left: 80px;">** Don't forget to
+edit \Program Files\Microchip\MpAM\Modules\J1939\j1939.c and ammend the
+ill-fated <span style="color: rgb(51, 51, 255);">
+CompareName ()</span>. **<br>
+
+
+      </div>
+
+
+      <br>
+
+
+      <br>
+
+
+Close then relaunch&nbsp;MpAm.exe, and now you have a new module
+ready:<br>
+
+
+      <br>
+
+
+      <img style="width: 788px; height: 707px;" alt="Application Maestro with j1939 module" title="Application Maestro with j1939 module" src="images/chapt_7/app_maestro_j1939.png"><br>
+
+
+      <br>
+
+
+And now you can configure your j1939 node in the left pane with much
+ease.<br>
+
+
+      
+      <hr style="width: 100%; height: 2px;">
+      
+      <h4><a name="What_is_next"></a> <br>
+
+
+      <br>
+
+
+      </h4>
+
+
+      
+      <h4>5&nbsp;- What is
+next?</h4>
+
+
+Don't want to look paranoid, but Vector's CAPL code for their <span style="font-weight: bold;">AddressClaiming_CN.cfg</span>
+sample, which we used for our <a href="index_5.html">Chapter
+5</a>, is also wrong (yes - the same bug; perhaps there is some
+link between these two sources?).<br>
+
+
+So next time we go over that.<br>
+
+
+      <br>
+
+
+Stay with&nbsp;us, may be we will get somewhere!<br>
+
+
+      <br>
+
+
+      
+      <div align="center">
+      
+      <table style="width: 70%;" border="0" cellpadding="2" cellspacing="2">
+
+
+        <tbody>
+
+
+          <tr>
+
+
+            <td style="background-color: rgb(224, 224, 224); text-align: left;">Don't
+forget: if you don't
+want to miss the next chapter, just drop me
+an email to <span style="font-weight: bold;">recursos.pt@gmail.com</span>
+subject: J1939 CAN, and I will notify you.<br>
+
+
+No other use will be made of your e-mail address.</td>
+
+
+          </tr>
+
+
+        
+        </tbody>
+      
+      </table>
+
+
+      </div>
+
+
+      <br>
+
+
+      <br>
+
+
+      
+      <hr style="width: 100%; height: 2px;"><br>
+
+
+      <br>
+
+
+And that's
+all, folks.<br>
+
+
+Please let me know of any broken links, missing
+parts etc. you may find here.<br>
+
+
+Next issues will become more
+sophisticated - I hope!.<br>
+
+
+      <span class="quoted"></span><br>
+
+
+      <span class="quoted"></span><br>
+
+
+      
+      <div align="center"><a href="http://www.flowerdeliverydeals.com/"><img src="http://c4.amazingcounters.com/counter.php?i=890627&amp;c=2672194" alt="Send Flowers" border="0"></a><br>
+
+
+      <small><a href="http://www.amazingcounters.com"><font color="#999999">Free Hit Counter</font></a></small></div>
+
+
+&lt;&lt; <a href="index.html">back to
+main
+page</a><br>
+
+
+&lt;&lt; <a href="index_6.html">previous chapter</a>
+(
+Michael Eisele's Xtm CAN bus simulator) <br>
+      <div style="text-align: right;"><br>
+
+(Vector's AddressClaiming_CN.cfg sample bug) <a href="index_8.html">next chapter</a> &gt;&gt;</div>
+
+
+
+      <br>
+
+
+      <br>
+
+
+      <a href="mailto:recursos.pt@gmail.com">&copy;Rec</a>
+&nbsp;(recursos.pt@gmail.com) <br>
+
+
+06-05-04<br>
+
+
+      <br>
+
+
+      </div>
+
+
+      </td>
+
+
+    </tr>
+
+
+  
+  </tbody>
+</table>
+
+
+<br>
+
+
+<br>
+
+
+</body>
+</html>

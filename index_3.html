@@ -1,0 +1,214 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>J1939 CAN bus spy, Chapt. 3</title>
+<meta content="text/html; charset=unicode" http-equiv="Content-Type">
+<meta name="description" content="J1939 and CAN bus - RS232 spy using Microchip PIC18F4580.">
+<meta name="keywords" content="J1939, CAN bus, RS232, spy, simulation">
+<style type="text/css">
+BODY {font-family: Verdana,courier;} .myText {COLOR: #339900} .quoted {COLOR: gray} .highlite {BACKGROUND-COLOR: #ffff33} A:hover { TEXT-DECORATION: underline; FONT-WEIGHT: bold }
+BODY {
+background : transparent url(images/gutter_gray.png) repeat-y;
+}
+div.float {
+float: left;
+}
+div.float p {
+text-align: center;
+}
+div.row span.left {
+float: left;
+text-align: left;
+font-weight: bold;
+width: 50%;
+}
+div.row span.right {
+float: right;
+text-align: right;
+font-weight: bold;
+width: 50%;
+}
+</style></head>
+<body><table width="600"> <tbody> <tr>
+<td> <h3>Chapter 3<br> </h3> <h3>J1939.c
+CAN Bus plus RS232&nbsp;(continued)</h3> <a href="index.html">&lt;&lt;back to main page</a><br><br>
+<div align="center"> <table style="width: 90%;">
+<tbody> <tr> <td><span class="quoted">Abstract
+of
+the <a title="previous chapter" href="index_1.html">1rst
+chapter</a>:<br>
+Microchip
+provided <a href="http://ww1.microchip.com/downloads/en/AppNotes/J1939.zip">source
+code</a> <img style="width: 15px; height: 16px;" alt="zip" src="images/zip.gif"> for <a href="http://ww1.microchip.com/downloads/en/AppNotes/00930a.pdf">J1939.c
+CAN library</a> <img style="width: 16px; height: 16px;" alt="pdf" src="images/pdf.gif"> (Kim
+Otten et al.), plus Application Maestro generated
+code&nbsp;UARTIntC.c, were used to implement a bare-bones system
+with a 2-node CAN bus, where node #129 upon receiving commands from
+#128
+to toggle a LED also output strings "ON" and "OFF" thru the RSR23.<br>
+<br>
+Abstract of the <a href="index_2.html">2nd chapter</a>:<br>
+</span><span class="quoted">We kept the 2 nodes #128
+and #129 exchanging messages, and added a
+3rd
+node, #130, listening to them, and reporting to the PC. Everything
+addressed to our smart node #130 was send to our PC's
+Terminal program, dumping the affected RxBuffers to
+the UART.</span><br class="quoted"> <span class="quoted"></span></td> </tr> </tbody>
+</table> </div> <br> <div style="text-align: center;"><br> <br> <br>
+</div> <div style="text-align: center;"><br> </div>
+Our setup suffered the annoying drawback that it would "spy" only
+messages addressed to himself - not that useful, therefore onto
+ListenOnly mode we marched.<br> <ol> <br> <li>
+<a href="#J1939.c_-_what_to_change">ListenOnly mode: what
+to
+change in J1939.c&nbsp;</a> </li> <li><a href="#Capturing_and_analyzing_CAN_bus_messages">Capturing
+and analyzing CAN bus messages</a></li> <li> <a href="#What_is_next">What's next?</a> </li> </ol>
+<hr style="width: 100%; height: 2px;"> <h4><span style="font-weight: bold;"><a name="J1939.c_-_what_to_change"></a>ListenOnly
+mode:&nbsp;what to change in J1939.c</span></h4>
+When setting the ECAN module, the first register to deal with is <span style="font-weight: bold;">ECANCON</span>: ENHANCED
+CAN CONTROL REGISTER, as by means of it one of the 3 modes of operation
+is selected:<br>
+- Mode 0 &ndash; Legacy mode<br>
+- Mode 1 &ndash; Enhanced Legacy mode with<br>
+DeviceNet support<br>
+- Mode 2 &ndash; FIFO mode with DeviceNet support<br> <br>
+Here we use always Mode 0, to keep it simple; later we will move up
+modes 1 and 2.<br>
+On the other hand, <span style="font-weight: bold;">CANCON</span>
+register allows us to go into ListenOnly mode.<br> <br>
+To put our spy in <span style="font-weight: bold;">ListenOnly</span>
+mode, we made just a small modification to the last working code: after
+the usual initialization, including Address Claiming and all (not
+really needed anymore, but we like it in small increments, to be sure
+nothing is ruined), we run a second initialization like that:<br>
+<br> <code>&nbsp;&nbsp;&nbsp;
+J1939_SetListenOnly();&nbsp;&nbsp;&nbsp; // change Mode to
+ListenOnly<br> <br> </code>And the only thing we do
+is to set&nbsp;<span style="font-weight: bold;">CANCON</span>
+and also setting mask0 and mask1 to zeros, to receive any and all
+messages:<br> <code><br>
+void J1939_SetListenOnly(void)<br>
+{<br> <br>
+&nbsp;&nbsp;&nbsp; // Put the ECAN module into
+configuration mode and set it to the<br>
+&nbsp;&nbsp;&nbsp; // desired mode.&nbsp; Then
+configure the extra buffers for receive or<br>
+&nbsp;&nbsp;&nbsp; // transmit as selected by the user.<br>
+&nbsp;&nbsp;&nbsp; SetECANMode( ECAN_CONFIG_MODE );<br>
+<br>
+&nbsp; &nbsp; ...<br> <br>
+&nbsp;&nbsp;&nbsp; // Set up mask 0 and 1 to receive ALL
+messages.<br>
+&nbsp;&nbsp;&nbsp; RXM0SIDH = 0x00;<br>
+&nbsp;&nbsp;&nbsp; RXM0SIDL = 0x08; //0x80;<br>
+&nbsp;&nbsp;&nbsp; RXM0EIDH = 0x00;<br>
+&nbsp;&nbsp;&nbsp; RXM0EIDL = 0x00;<br> <br>
+&nbsp;&nbsp;&nbsp; RXM1SIDH = 0x00;<br>
+&nbsp;&nbsp;&nbsp; RXM1SIDL = 0x08;<br>
+&nbsp;&nbsp;&nbsp; RXM1EIDH = 0x00;<br>
+&nbsp;&nbsp;&nbsp; RXM1EIDL = 0x00;<br> <br>
+&nbsp;&nbsp;&nbsp; // now the filters are dont' care, the
+mask allows all IDs<br>
+&nbsp; &nbsp; ...<br>
+&nbsp;&nbsp;&nbsp; // Put the ECAN module into ListenOnly
+Mode<br>
+&nbsp;&nbsp;&nbsp; SetECANMode( ECAN_LISTEN_ONLY );<br>
+&nbsp; &nbsp; ...<br>
+}</code><br> <br> <div style="margin-left: 40px;"><code><br>
+<br> </code>The other 2 nodes (#128 and #129) are left as
+before, the only changes are in the source for #130.<br> <br>
+You can download the new #130 project files from here:<br> <br>
+<a href="code/CAN_Uart_03_130_LO.zip">download
+CAN-Uart
+project </a>(#130) <img style="width: 15px; height: 16px;" alt="zip" src="images/zip.gif"><br> <a href="code/CAN_Uart_01_128.zip"><br> </a></div>
+<br> <hr style="width: 100%; height: 2px;"> <h4><a name="Capturing_and_analyzing_CAN_bus_messages"></a>Capturing
+and analyzing CAN bus messages</h4>
+Turning on power we get into the Terminal panel:<br> <br>
+43 41 4E 55 61 72 74 30 30 35 0D ........................... our test
+string "<span style="font-weight: bold; color: rgb(0, 153, 0);">CANUart005</span>"<br>
+41 67 7A FF 80 08 32 00 00 00 00 00 00 00 42 ..........&nbsp;<code></code><code>can
+address negotiation</code><code> (from node #128)</code><br>
+41 67 7A FF 81 08 33 00 00 00 00 00 00 00 42 .......... <code>idem</code><code>
+(from node #129)</code><br> <br>
+Now
+we leave our #129 switch open (three-stated) and receive lots and lots
+of LED command messages like (because the pin is floating between 1 and
+0 logic):<br>
+62 FA 80 81 00&nbsp;<code>toggle LED command</code><br>
+62 F8 80 81 00<br>
+etc.<br> <br>
+As analyzed in our previous chapter:<br> <br> <span style="font-weight: bold; color: rgb(204, 102, 204);"><span style="text-decoration: underline;">011</span></span><span style="color: rgb(204, 102, 204);"> 0 0 <span style="text-decoration: underline;">010 111</span></span><span style="color: rgb(0, 153, 0); text-decoration: underline line-through;">1
+10</span><span style="color: rgb(102, 102, 204);"><span style="text-decoration: underline;">10</span>
+1000 0000 <span style="color: rgb(153, 153, 153);">1000
+0001</span></span> <span style="color: rgb(204, 102, 0);">0000 0000</span> <br>
+&nbsp; &nbsp; &nbsp; R DP<br> <ol> <li>The
+leftmost 3 bits <span style="font-weight: bold; color: rgb(204, 51, 204);">011</span>
+are the message
+priority <span style="font-weight: bold;">P</span></li>
+<li>Next, <span style="font-weight: bold;">R</span>
+and <span style="font-weight: bold;">DP</span>
+(Data page) bits are both 0</li> <li>Next
+we have <span style="color: rgb(204, 51, 204);">0101 11</span><span style="text-decoration: line-through;">110</span><span style="color: rgb(204, 51, 204);">10</span> = 0x5E =
+94 (<span style="font-weight: bold;">PF</span>,
+"toggle OFF" PDU Format), where the three stricken bits are <span style="color: rgb(0, 153, 0);">SRR
+EXID &mdash;</span> bits that are poked into <span style="font-weight: bold;">RXBnEIDH</span> by the
+PIC18F4580's CAN module hardware.<br>
+(the second message PDU Format = 0x5C = 92 is the "toggle ON")</li>
+<li>Next
+we have <span style="color: rgb(102, 0, 204);">0x80</span>
+(<span style="font-weight: bold;">PS</span>
+PDU specific: #128, commanded device address)</li> <li>And
+then <span style="color: rgb(153, 153, 153);">0x81</span>
+= #129 which is the <span style="font-weight: bold;">SA </span>Source
+Address, the node that sent the command<br> </li> <li>Lastly,
+the Data Length: <span style="color: rgb(204, 102, 0);">00</span>
+= 0 bytes,
+as nothing more is needed</li> </ol> <br>
+Repeating for&nbsp;#128 switch, the messages look like:<br> <br>
+62 FA 81 80 00&nbsp;<code>toggle LED command</code><br>
+62 F8 81 80 00<br>
+etc.<br> <br>
+The only difference being that 0x81 (<span style="font-weight: bold;">PS</span>
+PDU specific: #129, commanded device address) and <span style="color: rgb(153, 153, 153);">0x80</span>
+= #128 which is the <span style="font-weight: bold;">SA </span>Source
+Address, the node that sent the command.<br> <br>
+But
+remember that we have a second "switch" at #128, RB6 that generates
+messages addressed to our "spy" #130. Playing with that wire, we get:<br>
+<br>
+62 FA 82 80 00<br>
+62 F8 82 80 00<br>
+etc.<br> <br>
+Once again the only difference being that 0x82 (<span style="font-weight: bold;">PS</span>
+PDU specific: #130, commanded device address) and <span style="color: rgb(153, 153, 153);">0x80</span>
+= #128 which is the <span style="font-weight: bold;">SA </span>Source
+Address, the node that sent the command<br> <br>
+The
+above tells us that really we are listening to all traffic, not just
+the one addressed to our #130, as in our former encarnation.<br> <br>
+But
+because our setup is not generating more than this 2 types of messages,
+the LED ON, LED OFF stuff, this really becomes boring in a short time!<br>
+<br> <br> <hr style="width: 100%; height: 2px;">
+<h4><a name="What_is_next"></a>What is
+next?</h4>
+Now
+that we changed our spy to "listening only" mode, we come very fast to
+the conclusion that we have so few messages available in our setup,
+that there is not much funny in looking at them.<br> <br>
+Short of plugging the thing into an "under the dash" auto OBD2, we must
+find something else to keep us&nbsp;awakened.<br> <br>
+Let us see what we can think of next to keep boredom away.<br> <br>
+<hr style="width: 100%; height: 2px;"><br> <br>
+And that's
+all, folks.<br>
+Please let me know of any broken links, missing
+parts etc. you may find here.<br>
+Next issues will become more
+sophisticated - I hope!.<br> <span class="quoted"></span><br>
+<span class="quoted"></span><br> <div align="center"><a href="http://www.flowerdeliverydeals.com/"><img src="http://c4.amazingcounters.com/counter.php?i=890627&amp;c=2672194" alt="Send Flowers" border="0"></a><br> <small><a href="http://www.amazingcounters.com"><font color="#999999">Free Hit Counter</font></a></small></div>
+<a href="index.html">&lt;&lt;back to main page</a><br>
+<br> <a href="mailto:recursos.pt@gmail.com">&copy;Rec</a>
+&nbsp;(recursos.pt@gmail.com) <br>
+06-03-06<br> <br> </td> </tr> </tbody>
+</table><br>
+<br></body></html>

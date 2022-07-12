@@ -1,0 +1,210 @@
+[defaults]
+geometry=( 14 37 1061 806 )
+is_maximized=false
+is_minimized=false
+workspace_width=1061
+workspace_height=573
+main_window_settings="=0a=0a=0aToolbar,=0a[Toolbar,0,0,-1,-1,1]=0aMessage Window,=0a[Message Window,0,0,-1,125,1]=0a=0a=0a=0a=0a"
+triggers=( {triggers}( ) {trigger_count}0 {conditions}( ) {condition_count}0 )
+workspaces=( ( {name}"Default Workspace" {id}0 ) )
+active_workspace=0
+
+[rt_log]
+sif="NONE"
+font_size=8
+col_params=( ( {section}0 {width}47 {index}0 {visible}true ) ( {section}1 {width}128 {index}1 {visible}true )
+             ( {section}2 {width}815 {index}2 {visible}true ) )
+mode_scroll_mode=true
+mode_delta_t=false
+
+[CAN]
+active=true
+index=1
+name="NodeA"
+dummy_signals=( )
+bitrate=250000
+tseg1=11
+tseg2=4
+sjw=1
+samples=1
+silent_mode=false
+channel="Virtual #1 (Channel 1)"
+script_file="NodeA.sig"
+protocol_mode=0
+subsystem_bitrate=20000
+protocol_plugin_name="J1939"
+candb_file_count=1
+candb_file_0="j1939Short.dbc"
+candb_file="j1939Short.dbc"
+channel_number=0
+connect_to_channel=""
+filter_std=( {extended_id}0 {block_all}0 {code}0 {mask}0 {active}1 )
+filter_ext=( {extended_id}1 {block_all}0 {code}0 {mask}0 {active}1 )
+
+[CAN]
+active=true
+index=2
+name="NodeB"
+dummy_signals=( )
+bitrate=250000
+tseg1=11
+tseg2=4
+sjw=1
+samples=1
+silent_mode=false
+channel="Virtual #1 (Channel 1)"
+script_file="NodeB.sig"
+protocol_mode=0
+subsystem_bitrate=20000
+protocol_plugin_name="J1939"
+candb_file_count=0
+channel_number=0
+connect_to_channel=""
+filter_std=( {extended_id}0 {block_all}0 {code}0 {mask}0 {active}1 )
+filter_ext=( {extended_id}1 {block_all}0 {code}0 {mask}0 {active}1 )
+
+[Trace]
+geometry=( 3 6 773 325 )
+title="Trace 1"
+update_rate=250
+index=1
+top_dock_config="[Toolbar <Trace 1>,0,0,-1,-1,1]=0a"
+bottom_dock_config="[CAN Signal Table <Trace 1>,0,0,-1,185,1]=0a"
+maximized_qt=false
+minimized_qt=false
+maximized=false
+minimized=false
+detached=false
+workspace_id=0
+sif="CAN1"
+col_width_channel=48
+col_width_data=243
+col_width_time=87
+col_width_ascii=92
+col_width_number=48
+col_width_id=171
+col_width_dlc=37
+col_width_signals=200
+col_index_channel=0
+col_index_data=4
+col_index_time=2
+col_index_ascii=5
+col_index_number=11
+col_index_id=1
+col_index_dlc=3
+col_index_signals=6
+col_visible_channel=false
+col_visible_data=true
+col_visible_time=true
+col_visible_ascii=false
+col_visible_number=true
+col_visible_id=true
+col_visible_dlc=false
+col_visible_signals=false
+extra_col_width_0=59
+extra_col_index_0=7
+extra_col_visible_0=true
+extra_col_width_1=33
+extra_col_index_1=8
+extra_col_visible_1=true
+extra_col_width_2=34
+extra_col_index_2=9
+extra_col_visible_2=true
+extra_col_width_3=37
+extra_col_index_3=10
+extra_col_visible_3=true
+mode_scroll_mode=true
+mode_delta_t=false
+mode_candb_mode=true
+fmt_id_hex=false
+fmt_data_hex=true
+time_format=0
+filter_std=( {extended_id}0 {filter_type}1 {active}0 {filter_list}( ) )
+filter_ext=( {extended_id}1 {filter_type}1 {active}0 {filter_list}( ) )
+signal_table_visible=true
+signal_table=( {col_width_name}223 {col_width_raw}77 {col_width_phys}107 {col_width_unit}44 {col_width_range}272
+               )
+
+[panel]
+geometry=( 772 12 284 331 )
+title="panel 1"
+update_rate=250
+index=1
+top_dock_config="[Toolbar <panel 1>,0,0,-1,-1,1]=0a"
+bottom_dock_config="=0a"
+maximized_qt=false
+minimized_qt=false
+maximized=false
+minimized=false
+detached=false
+workspace_id=0
+controls=( ( {class}"QPushButton" {xtm-class}"PushButton" {properties}( ( {name}"name" {type}"cstring" {value}"push_button_1" ) ( {name}"geometry" {type}"rect" {x}20 {y}30 {width}80 {height}20 )
+               ( {name}"text" {type}"string" {value}"Toggle LED" ) ( {name}"enabled" {type}"bool" {value}"true" )
+               ) {actions}( {clicked}( ( {sif}"CAN1" {aname}"Toggle LED" ) ) {pressed}( ) {released}( ) )
+             ) ( {class}"QtLed" {xtm-class}"LED" {properties}( ( {name}"name" {type}"cstring" {value}"unnamed" ) ( {name}"geometry" {type}"rect" {x}130 {y}100 {width}40 {height}40 )
+               ( {name}"enabled" {type}"bool" {value}"true" ) ( {name}"ledColor" {type}"QColor" {value}"#ff0000" )
+               ( {name}"inverse" {type}"bool" {value}"false" ) ( {name}"upperLimit" {type}"double" {value}0 )
+               ( {name}"lowerLimit" {type}"double" {value}0 ) ( {name}"upperLimitValid" {type}"bool" {value}"true" )
+               ( {name}"lowerLimitValid" {type}"bool" {value}"true" ) )
+             {signal}( {sif}"CAN2" {sname}"SignalLedState" {index}0 {override_range}false {override_range_min}-10
+               {override_range_max}10 {default_value_valid}true {default_value}0 ) ) ( {class}"QLineEdit" {xtm-class}"LineEdit" {properties}( ( {name}"name" {type}"cstring" {value}"node_a_address" ) ( {name}"geometry" {type}"rect" {x}20 {y}210 {width}90 {height}20 )
+               ( {name}"text" {type}"string" {value}"130" ) ( {name}"enabled" {type}"bool" {value}"true" )
+               ( {name}"readOnly" {type}"bool" {value}"false" ) )
+             {actions}( {textChanged}( ) {returnPressed}( ) ) )
+           ( {class}"QPushButton" {xtm-class}"PushButton" {properties}( ( {name}"name" {type}"cstring" {value}"push_button_2" ) ( {name}"geometry" {type}"rect" {x}120 {y}210 {width}70 {height}20 )
+               ( {name}"text" {type}"string" {value}"Set Address" ) ( {name}"enabled" {type}"bool" {value}"true" )
+               ) {actions}( {clicked}( ( {sif}"CAN1" {aname}"Set Node Address" ) ) {pressed}( ) {released}( ) )
+             ) ( {class}"QLabel" {xtm-class}"TextLabel" {properties}( ( {name}"name" {type}"cstring" {value}"unnamed" ) ( {name}"geometry" {type}"rect" {x}20 {y}180 {width}100 {height}20 )
+               ( {name}"text" {type}"string" {value}"NodeA Address:" ) ( {name}"enabled" {type}"bool" {value}"true" )
+               ) ) ( {class}"QFrame" {xtm-class}"Horizontal Line" {properties}( ( {name}"name" {type}"cstring" {value}"hline_1" ) ( {name}"geometry" {type}"rect" {x}30 {y}160 {width}220 {height}10 )
+               ( {name}"enabled" {type}"bool" {value}"true" ) )
+             ) ( {class}"QLabel" {xtm-class}"TextLabel" {properties}( ( {name}"name" {type}"cstring" {value}"unnamed" ) ( {name}"geometry" {type}"rect" {x}20 {y}110 {width}100 {height}20 )
+               ( {name}"text" {type}"string" {value}"NodeB LED State:" ) ( {name}"enabled" {type}"bool" {value}"true" )
+               ) )
+           )
+
+[CanSend]
+geometry=( 7 200 689 344 )
+title="CanSend 1"
+update_rate=150
+index=1
+top_dock_config="[Toolbar <CanSend 1>,0,0,-1,-1,1]=0a"
+bottom_dock_config="[CAN Signal Table <CanSend 1>,0,0,-1,233,1]=0a"
+maximized_qt=false
+minimized_qt=false
+maximized=false
+minimized=false
+detached=false
+workspace_id=0
+number_of_messages=3
+col_width_channel=55
+col_width_id=232
+col_width_dlc=37
+col_width_data=168
+col_width_rate=58
+col_width_count=44
+col_width_tmt=71
+col_width_key=122
+col_width_action=80
+col_width_comment=100
+col_width_trigger=100
+col_visible_channel=true
+col_visible_id=true
+col_visible_dlc=true
+col_visible_data=true
+col_visible_rate=false
+col_visible_count=false
+col_visible_tmt=true
+col_visible_key=false
+col_visible_action=true
+col_visible_comment=false
+col_visible_trigger=false
+messages=( ( {id}"0" {dlc}8 {data}"fe 72 c2 b9 9f 64 00 00" {canif}"CAN1" {onkey}4194392 {rate}0 {count}0
+             {comment}"" {trigger}" --- " ) ( {id}"AddressClaimed,sa=3d129,da=3d255" {dlc}8 {data}"f7 57 06 00 03 8f 00 68" {canif}"CAN1"
+             {onkey}4194392 {rate}0 {count}0 {comment}"" {trigger}" --- " )
+           ( {id}"0" {dlc}8 {data}"00 00 00 00 00 00 00 00" {canif}"CAN1" {onkey}4194392 {rate}0 {count}0
+             {comment}"" {trigger}" --- " ) )
+signal_table_visible=true
+signal_table=( {col_width_name}182 {col_width_raw}77 {col_width_phys}106 {col_width_unit}50 {col_width_range}215
+               )
+

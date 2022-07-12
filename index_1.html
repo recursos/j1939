@@ -1,0 +1,438 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+  <title>J1939 CAN bus spy, Chapt. 1</title>
+
+  <meta http-equiv="Content-Type" content="text/html; charset=unicode">
+
+  <meta name="description" content="J1939 and CAN bus - RS232 spy using Microchip PIC18F4580.">
+
+  <meta name="keywords" content="J1939, CAN bus, RS232, spy, simulation">
+
+  <style type="text/css">
+BODY {font-family: Verdana,courier;} .myText {COLOR: #339900} .quoted {COLOR: gray} .highlite {BACKGROUND-COLOR: #ffff33} A:hover { TEXT-DECORATION: underline; FONT-WEIGHT: bold }
+BODY {
+background : transparent url(images/gutter_gray.png) repeat-y;
+}
+div.float {
+float: left;
+}
+div.float p {
+text-align: center;
+}
+div.row span.left {
+float: left;
+text-align: left;
+font-weight: bold;
+width: 50%;
+}
+div.row span.right {
+float: right;
+text-align: right;
+font-weight: bold;
+width: 50%;
+}
+  </style>
+</head>
+
+<body>
+<table width="600">
+ <tbody>
+ <tr>
+
+      <td> 
+      <h3>J1939.c
+CAN Bus plus RS232 bridge</h3>
+ <a href="index.html">&lt;&lt;back
+to main page</a><br>
+ <br>
+
+Microchip
+provides <a href="http://ww1.microchip.com/downloads/en/AppNotes/J1939.zip">source
+code</a> <img style="width: 15px; height: 16px;" alt="zip" src="images/zip.gif"> to implement a simple
+      <a href="http://ww1.microchip.com/downloads/en/AppNotes/00930a.pdf">J1939.c
+CAN library</a> <img style="width: 16px; height: 16px;" alt="pdf" src="images/pdf.gif"> (Kim
+Otten et al.)<br>
+
+This is a very good start - but perhaps many
+folks will stumble (like myself) even over minor difficulties.<br>
+
+      <br>
+
+One
+useful way to help us understand what is going on the J1939.c CAN bus
+is to have one device with a UART, looking to the bus and dumping some
+"debug" strings to the PC's RS232. Everybody likes this.<br>
+ <br>
+
+I
+made such a
+setup, and would like to share it with anyone who can benefit from it.<br>
+
+      <br>
+ 
+      <div style="margin-left: 20px;"> 
+      <table style="width: 527px;">
+ <tbody>
+ <tr>
+ <td><span class="quoted">Let me state
+that I am not an expert neither
+in C language, neither in
+CAN - my setup works, but is not nice nor elegant, in fact it is quite
+ugly:=). <br>
+
+I hope that in the next months things (and
+myself as an
+embedded programmer) will
+improve!</span></td>
+ </tr>
+ 
+        </tbody> 
+      </table>
+
+      </div>
+ <br>
+ 
+      <ol>
+ <li> 
+          <h4><a href="#The_hardware_setup">The
+hardware setup</a></h4>
+ </li>
+ <li> 
+          <h4><a href="#The_firmware_setup">The
+firmware
+setup</a></h4>
+ </li>
+ <li> 
+          <h4><a href="#Putting_it_all_together">Putting
+it all together</a></h4>
+ </li>
+ 
+      </ol>
+ 
+      <hr style="width: 100%; height: 2px;"> 
+      <h4><a name="The_hardware_setup"></a>The <span style="font-weight: bold;">hardware</span>
+setup</h4>
+
+Materials:<br>
+ 
+      <ul>
+ <li>Breadboard,
+power supply etc.</li>
+ <li>PIC18F4580
+2 units</li>
+ <li>MCP2551 2 units</li>
+ <li>XTAL
+20
+MHz 1 unit (one PIC
+supplies the system clock)</li>
+ <li>MAX232</li>
+ <li>several
+LEDs,
+resistors, decoupling capacitors etc.</li>
+ 
+      </ul>
+
+I
+am not going
+to bother you with unnecessary details and schemas about how to connect
+all these, as if you are reading me you know enough or can find it in
+so many places on the web that I would just be adding more noise.<br>
+
+      <br>
+ 
+      <div align="center"> 
+      <table style="width: 80%; background-color: rgb(238, 238, 238);" border="1" cellpadding="2" cellspacing="2">
+ <tbody>
+
+          <tr>
+ <td>Should
+someone draw the schematic and
+send it to me, I will add it to this page with full credits to the
+author.</td>
+ </tr>
+ 
+        </tbody> 
+      </table>
+ </div>
+
+      <br>
+
+One
+PIC18F4580 (CAN ID = #129) acts as the RS232 bridge, is clocked by the
+20MHz XTAL, and provides the system clock to the other&nbsp;PIC
+thru
+OSC2.<br>
+
+So both PICs Fosc = 20MHz. <br>
+ <br>
+
+The
+original J1939.c uses 2 devices, numbered CAN ID #128 and #129, and
+defines in both devices RB4 as a switch input, and RD0 as LED output.<br>
+
+Toggling
+the
+switch in one unit sends a CAN message to the other unit, commanding it
+to toggle the LED in RD0:<br>
+ <br>
+ 
+      <div align="center">
+      <table style="text-align: left; width: 460px; height: 92px; background-color: rgb(238, 238, 238);" border="1" cellpadding="2" cellspacing="2">
+ <tbody>
+
+          <tr>
+ <td style="vertical-align: top; background-color: rgb(238, 238, 238);">CAN
+ID #128</td>
+ <td style="vertical-align: top;">sends&nbsp;LED
+toggle command to #129<br>
+
+accepts command&nbsp;to toggle own
+LED<br>
+ </td>
+ </tr>
+ <tr>
+ <td style="vertical-align: top;">CAN
+ID #129</td>
+ <td style="vertical-align: top;">sends&nbsp;LED
+toggle command to #128<br>
+
+accepts command&nbsp;to toggle own
+LED</td>
+ </tr>
+ 
+        </tbody> 
+      </table>
+ </div>
+
+      <br>
+
+In my
+setup when a command is received from #128, device #129 (the RS232
+bridge) toggles the LED and <span style="font-weight: bold;">also
+outputs thru the serial port</span> the
+string "ON" or "OFF", to be displayed on a PC terminal program.<br>
+
+      <br>
+ <br>
+ 
+      <div style="text-align: center;"><img title="The UART is not sending CAN buffers, just &quot;ON&quot; or &quot;OFF&quot; strings" style="width: 340px; height: 223px;" alt="the 2 PIC effort" src="images/2_pic_effort_pc.png"><br>
+ </div>
+ <br>
+
+      <br>
+ <span class="myText quoted">As you see, the
+modification is a very
+small one, but gives us the full help of the RS232 as a debugging tool.</span><br class="myText quoted">
+ <span class="myText quoted">I
+hope that in the next weeks this setup will evolve to something more
+useful, that is, a full CAN bus "spy".</span><br>
+ <br>
+
+Because
+the 40 pin DIPs use most of the breadboard real estate, instead of true
+switches, I just used a piece of wire, connecting it to GND or VDD
+alternatively.<br>
+
+Having PORTB pull ups enabled, the traffic
+generated on the CANbus is very small.<br>
+
+But if you
+disable
+PORTB pull ups, then when the wire is left unconnected, the noise
+induced "switching" generates so much traffic, that sometimes the UART
+soft buffer is overrun - 57600 baud is not that much.<br>
+ <br>
+
+      <table width="100%">
+ <tbody>
+ <tr>
+ <td><img src="images/bboard_1_small.png" alt="breadboard" height="261" width="258"></td>
+ <td><img alt="breadboard" src="images/bboard_2_small.png" height="226" width="349">&lt;</td>
+ </tr>
+
+        </tbody> 
+      </table>
+ <br>
+ 
+      <p></p>
+ 
+      <hr style="width: 100%; height: 2px;"> 
+      <h4><a name="The_firmware_setup"></a>The
+firmware setup</h4>
+
+Other then the <a href="http://ww1.microchip.com/downloads/en/AppNotes/00930a.pdf">J1939.c
+CAN library</a> <img style="width: 16px; height: 16px;" alt="pdf" src="images/pdf.gif"> <a href="http://ww1.microchip.com/downloads/en/AppNotes/J1939.zip">source
+code</a> <img style="width: 15px; height: 16px;" alt="zip" src="images/zip.gif">, I used UARTintC.c
+etc. generated
+with Application Maestro, both slightly modified.<br>
+
+You
+must use 2 separate projects, one for the CAN-Usart PIC (#129), the
+other for the CAN-only PIC (#128) that send commands to the former:<br>
+
+      <br>
+ <a href="code/CAN_Uart_01_129.zip">download
+CAN-UART
+project</a> (#129) <img style="width: 15px; height: 16px;" alt="zip" src="images/zip.gif"><br>
+ <a href="code/CAN_Uart_01_128.zip">download
+CAN-only
+project </a>(#128) <img style="width: 15px; height: 16px;" alt="zip" src="images/zip.gif"><br>
+ <br>
+
+Unzip,
+build etc., or just
+use the precompiled .hex.<br>
+
+But there is a <span style="font-style: italic;">caveat</span>:<br>
+
+      <br>
+ 
+      <div align="center"> 
+      <table style="width: 80%; text-align: left; margin-left: auto; margin-right: auto;" border="0" cellpadding="2" cellspacing="2">
+ <tbody>
+
+          <tr>
+ <td style="background-color: rgb(238, 238, 238);"><br>
+
+Please
+notice that the original folders were:<br>
+ <br>
+
+D:\CAN\uartCAN
+(for device #129)<br>
+
+D:\CAN\example1a (for device #128)<br>
+
+D\CAN\output
+(for common output files)<br>
+ <br>
+
+and the C18 linker was in:<br>
+
+I:\MCC18\lkr
+etc.<br>
+ <br>
+
+Rember, MPLAB projects use absolute paths (am I
+wrong?) therefore <span style="font-weight: bold;">you
+must edit the *.mcp files</span> to reflect your folders setup!<br>
+
+            <br>
+ </td>
+ </tr>
+ 
+        </tbody> 
+      </table>
+ </div>
+
+      <br>
+
+So
+you program one PIC18F4580 and label it #128, the other you label it
+#129 and plug them into the breadboard; when powered, depending on how
+you handle the switches, the LEDs should light up or not.<br>
+ <br>
+
+      <hr style="width: 100%; height: 2px;"> 
+      <h4><a name="Putting_it_all_together"></a>All
+together now</h4>
+
+The
+next job is to connect the
+serial port of #129 to your PC.<br>
+      <a name="Bray_Terminal_v19b"></a>
+I used as terminal the
+excelent <a href="http://bray.velenje.cx/avr/terminal/">Terminal
+v1.9b</a> provided by Bray++, which goes now up to 256000 baud
+(will need that later on).<br>
+
+Configure it to 57600 baud (see
+figure).<br>
+ <br>
+
+Connect everything
+(remember, if you have been using PicStart + to program the parts, and
+your PC has just&nbsp;COM1, to "disable" the programmer prior to
+"connecting" the terminal, otherwise an error will be raised.<br>
+
+      <br>
+
+Now
+upon power up, 10 strings "Main Uart" are sent to the terminal, so you
+know the circuit is OK, and then toggling the switch in #128, the
+terminal will show:<br>
+
+&nbsp;"ON"<br>
+
+and<br>
+
+&nbsp;"OFF"<br>
+
+accordingly.<br>
+ <br>
+
+It
+will look something like this:<br>
+ <br>
+ <img style="width: 692px; height: 522px;" alt="Terminal v1.9b in use" title="Terminal v1.9b in use" src="images/terminal.png"><br>
+
+      <br>
+
+Thats
+all, folks.<br>
+
+Please let me know of any broken links, missing
+parts etc. you may find here.<br>
+
+Next issue will be more
+sofisticated.<br>
+ <br>
+ 
+      <table style="background-color: rgb(238, 238, 238); width: 80%; text-align: left; margin-left: auto; margin-right: auto;" border="1" cellpadding="2" cellspacing="2">
+ <tbody>
+
+          <tr>
+ <td><img style="width: 30px; height: 10px;" alt="new!" src="images/new.gif"><br>
+
+Notice:<br>
+
+Someone told
+me that he could not "connect" Terminal.exe; as I
+said above,&nbsp;if your PC has only one serial port (COM1), and
+you have
+been using MPLAB IDE + PicStart plus to programm the parts, do not
+forget to "disable" (freeing the port)&nbsp;the programmer before
+trying to
+connect Terminal.exe!<br>
+ <br>
+ </td>
+ </tr>
+ 
+        </tbody>
+      </table>
+ <br>
+ <br>
+ <br>
+ 
+      <div align="center"><a href="http://www.flowerdeliverydeals.com/"><img src="http://c4.amazingcounters.com/counter.php?i=890627&amp;c=2672194" alt="Send Flowers" border="0"></a><br>
+ <small><a href="http://www.amazingcounters.com"><font color="#999999">Free Hit Counter</font></a></small></div>
+
+      <a href="index.html">&lt;&lt;back to main page</a><br>
+
+      <br>
+ <a href="mailto:recursos.pt@gmail.com">&copy;Rec</a>
+&nbsp;(recursos.pt@gmail.com) <br>
+
+06-02-15<br>
+ <br>
+ </td>
+ </tr>
+ 
+  </tbody>
+</table>
+<br>
+
+<br>
+</body>
+</html>

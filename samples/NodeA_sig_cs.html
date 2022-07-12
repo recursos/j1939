@@ -1,0 +1,1304 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+
+  <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">
+  <title>NodeA.sig</title>
+
+
+  <style type="text/css">
+/* GeSHi (c) Nigel McNie 2004 (http://qbnz.com/highlighter) */
+.csharp .de1, .csharp .de2 {color: #000060; font-weight: normal;font-size: 14px;}
+.csharp {white-space: nowrap;border: 1px dotted #a0a0a0; font-family: 'Courier New', Courier, monospace; font-size: 110px; background-color: #f0f0f0; margin: 0; line-height: 110%; padding: 0;color: #000099;}
+.csharp a:link {color: #006;}
+.csharp a:hover {background-color: #d6d6e6;}
+.csharp .head {font-family: Verdana, Arial, sans-serif; color: #808080; font-size: 70%; font-weight: bold; background-color: #f0f0ff; border-bottom: 1px solid #d0d0d0; padding: 2px;}
+.csharp .foot {font-family: Verdana, Arial, sans-serif; color: #808080; font-size: 70%; font-weight: bold; background-color: #f0f0ff; border-top: 1px solid #d0d0d0; padding: 2px;}
+.csharp .imp {font-weight: bold; color: red;}
+.csharp li {font-family: 'Courier New', Courier, monospace; color: #000060; background-color: #e0e0e0; padding-bottom: 2px;}
+.csharp .kw1 {color: #0600FF;}
+.csharp .kw2 {color: #FF8000; font-weight: bold;}
+.csharp .kw3 {color: #008000;}
+.csharp .kw4 {color: #FF0000;}
+.csharp .kw5 {color: #000000;}
+.csharp .co1 {color: #008080; font-style: italic;}
+.csharp .co2 {color: #008080;}
+.csharp .coMULTI {color: #008080; font-style: italic;}
+.csharp .es0 {color: #008080; font-weight: bold;font-weight: normal;}
+.csharp .br0 {color: #008000;}
+.csharp .st0 {color: #808080;}
+.csharp .nu0 {color: #FF0000;}
+.csharp .me1 {color: #0000FF;}
+.csharp .me2 {color: #0000FF;}
+.csharp .me {1}
+  </style>
+</head>
+
+
+<body>
+
+<div class="csharp" style="border: 1px dotted rgb(160, 160, 160); margin: 0pt; padding: 0pt; white-space: nowrap; font-family: 'Courier New',Courier,monospace; font-size: 110%; background-color: rgb(240, 240, 240); line-height: 110%; color: rgb(0, 0, 153);">
+<div class="head">Syntax Highlighter: <a href="http://qbnz.com/highlighter/">GeSHi</a>
+&copy; 2004, Nigel McNie</div>
+
+<ol>
+
+  <li class="li1">
+    <div class="de1"><span class="co2">#&lt;hr&gt;</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1"><span class="co2">#Datei:
+&lt;b&gt;A simple J1939 Demo, Node
+A&lt;/b&gt;&lt;p&gt;</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1"><span class="co2">#Author:
+&lt;b&gt;Michael Eisele&lt;/b&gt;&lt;p&gt;</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1"><span class="co2">#Datum:
+&lt;b&gt;30.03.2006&lt;/b&gt;&lt;p&gt;</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1"><span class="co2">#&lt;hr&gt;</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">variables <span class="br0">{</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;
+CanMessage_AddressClaimed&nbsp; &nbsp; msg_ac;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; timer tx_timer;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; timer ac_timer;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; <span class="kw4">int</span>&nbsp;
+&nbsp;node_address;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; <span class="kw4">int</span>&nbsp;
+&nbsp;name_arbitrary_address_capable,</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; &nbsp;
+&nbsp; name_industry_group,</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; &nbsp;
+&nbsp; name_vehicle_system_instance,</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; &nbsp;
+&nbsp; name_vehicle_system,</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; &nbsp;
+&nbsp; name_function,</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; &nbsp;
+&nbsp; name_function_instance,</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; &nbsp;
+&nbsp; name_ecu_instance,</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; &nbsp;
+&nbsp; name_manufacturer_code,</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; &nbsp;
+&nbsp; name_identity_number;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; <span class="kw4">int</span>&nbsp;
+&nbsp;led_on;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; <span class="kw4">int</span>&nbsp;
+&nbsp;address_valid;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1"><span class="br0">}</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1"><span class="kw4">int</span>
+compare_names <span class="br0">(</span><span class="kw4">char</span> n1<span class="br0">[</span><span class="br0">]</span>, <span class="kw4">char</span>
+n2<span class="br0">[</span><span class="br0">]</span><span class="br0">)</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1"><span class="br0">{</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; <span class="kw4">int</span>
+i;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; <span class="kw4">int</span>
+ret = <span class="nu0">0</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; <span class="kw1">for</span>
+    <span class="br0">(</span>i = <span class="nu0">7</span>; i &gt;=0<span class="nu0"></span>;
+--i<span class="br0">)</span> <span class="br0">{</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; printf <span class="br0">(</span><span class="st0">"cn
+(%d): myName[%d]= %02x, otherName[%d]= %02x<span class="es0">\n</span>"</span>,
+i,i, n1<span class="br0">[</span>i<span class="br0">]</span> &amp; 0xff, i,n2<span class="br0">[</span>i<span class="br0">]</span>
+&amp; 0xff<span class="br0">)</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; <span class="kw1">if</span> <span class="br0">(</span><span class="br0">(</span>n1<span class="br0">[</span>i<span class="br0">]</span> &amp; 0xff<span class="br0">)</span>
+&lt; <span class="br0">(</span>n2<span class="br0">[</span>i<span class="br0">]</span>
+&amp; 0xff<span class="br0">)</span><span class="br0">)</span> <span class="br0">{</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; &nbsp; ret
+= <span class="nu0">-1</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; &nbsp; <span class="kw1">break</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; <span class="br0">}</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; <span class="kw1">else</span> <span class="kw1">if</span>
+    <span class="br0">(</span><span class="br0">(</span>n1<span class="br0">[</span>i<span class="br0">]</span>
+&amp; 0xff<span class="br0">)</span> &gt; <span class="br0">(</span>n2<span class="br0">[</span>i<span class="br0">]</span> &amp; 0xff<span class="br0">)</span><span class="br0">)</span> <span class="br0">{</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; &nbsp; ret
+= <span class="nu0">1</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; &nbsp; <span class="kw1">break</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; <span class="br0">}</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; <span class="br0">}</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; <span class="kw1">return</span>
+ret;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1"><span class="br0">}</span>
+    <span class="coMULTI">/* compare_names */</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1"><span class="kw1">void</span>
+send_address_claimed <span class="br0">(</span><span class="br0">)</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1"><span class="br0">{</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; <span class="co1">//msg_ac.pgn
+= 0xee00;</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; msg_ac.<span class="me1">sa</span>&nbsp;
+= node_address;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; msg_ac.<span class="me1">da</span>&nbsp;
+= 0xff;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; <span class="co1">//msg_ac.pri
+= 3;</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; msg_ac.<span class="me1">flags</span>
+= CANMSG_FLAG_EXT_ID;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; <span class="co1">//msg_ac.dlc
+= 8;</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; <span class="co1">//</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; <span class="co1">//msg_ac.IdentityNumber.Raw&nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; = name_identity_number;</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; <span class="co1">//msg_ac.ManufacturerCode.Raw&nbsp;
+&nbsp; &nbsp; &nbsp; = name_manufacturer_code;</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; <span class="co1">//msg_ac.ECUInstance.Raw&nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;=
+name_ecu_instance;</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; <span class="co1">//msg_ac.FunctionInstance.Raw&nbsp;
+&nbsp; &nbsp; &nbsp; = name_function_instance;</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; <span class="co1">//msg_ac.Function.Raw&nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp; = name_function;</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; <span class="co1">//msg_ac.VehicleSystem.Raw&nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;=
+name_vehicle_system;</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; <span class="co1">//msg_ac.VehicleSystemInstance.Raw&nbsp;
+&nbsp;= name_vehicle_system_instance;</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; <span class="co1">//msg_ac.IndustryGroup.Raw&nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;=
+name_industry_group;</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; <span class="co1">//msg_ac.ArbitraryAddressCapable.Raw
+= name_arbitrary_address_capable;</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; canSendMessage <span class="br0">(</span>msg_ac<span class="br0">)</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; <span class="kw1">if</span>
+    <span class="br0">(</span><span class="br0">(</span><span class="br0">(</span>node_address &gt;= <span class="nu0">0</span><span class="br0">)</span>
+&amp;&amp; <span class="br0">(</span>node_address
+&lt;= <span class="nu0">127</span><span class="br0">)</span><span class="br0">)</span>
+||</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; &nbsp; <span class="br0">(</span><span class="br0">(</span>node_address
+&gt;= <span class="nu0">248</span><span class="br0">)</span> &amp;&amp; <span class="br0">(</span>node_address &lt;= <span class="nu0">253</span><span class="br0">)</span><span class="br0">)</span><span class="br0">)</span>
+    <span class="br0">{</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; <span class="co1">// Single Address CAs with addresses in the
+0-127 and 248-253 ranges may omit the 250 ms delay.</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; address_valid =
+    <span class="nu0">1</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; <span class="br0">}</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; <span class="kw1">if</span>
+    <span class="br0">(</span>!address_valid<span class="br0">)</span> timerStart <span class="br0">(</span>ac_timer<span class="br0">)</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1"><span class="br0">}</span>
+    <span class="co1">// send_address_claimed</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">on start <span class="br0">{</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; node_address = <span class="nu0">128</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;
+name_arbitrary_address_capable = <span class="nu0">0</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;
+name_industry_group&nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; = <span class="nu0">2</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;
+name_vehicle_system_instance&nbsp; &nbsp;= <span class="nu0">10</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;
+name_vehicle_system&nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; = <span class="nu0">5</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; name_function&nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; = <span class="nu0">99</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;
+name_function_instance&nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp;= <span class="nu0">11</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;
+name_ecu_instance&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; = <span class="nu0">2</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;
+name_manufacturer_code&nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp;= <span class="nu0">321</span>;&nbsp;
+&nbsp;<span class="co1">// 0x141</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;
+name_identity_number&nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp;= <span class="nu0">76346</span>;
+    <span class="co1">//0x12A3A</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; <span class="co1">//
+Setup global AddressClaimed message</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; <span class="co1">//msg_ac.pgn
+= 0xee00;</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; msg_ac.<span class="me1">sa</span>&nbsp;
+= node_address;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; msg_ac.<span class="me1">da</span>&nbsp;
+= 0xff;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; msg_ac.<span class="me1">pri</span>
+= <span class="nu0">3</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; msg_ac.<span class="me1">flags</span>
+= CANMSG_FLAG_EXT_ID;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; msg_ac.<span class="me1">dlc</span>
+= <span class="nu0">8</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; msg_ac.<span class="me1">IdentityNumber</span>.<span class="me1">Raw</span>&nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; = name_identity_number;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; msg_ac.<span class="me1">ManufacturerCode</span>.<span class="me1">Raw</span>&nbsp; &nbsp; &nbsp;
+&nbsp; = name_manufacturer_code;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; msg_ac.<span class="me1">ECUInstance</span>.<span class="me1">Raw</span>&nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp;= name_ecu_instance;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; msg_ac.<span class="me1">FunctionInstance</span>.<span class="me1">Raw</span>&nbsp; &nbsp; &nbsp;
+&nbsp; = name_function_instance;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; msg_ac.<span class="me1">Function</span>.<span class="me1">Raw</span>&nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; = name_function;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; msg_ac.<span class="me1">VehicleSystem</span>.<span class="me1">Raw</span>&nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; &nbsp;= name_vehicle_system;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; msg_ac.<span class="me1">VehicleSystemInstance</span>.<span class="me1">Raw</span>&nbsp; &nbsp;=
+name_vehicle_system_instance;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; msg_ac.<span class="me1">IndustryGroup</span>.<span class="me1">Raw</span>&nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; &nbsp;= name_industry_group;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; msg_ac.<span class="me1">ArbitraryAddressCapable</span>.<span class="me1">Raw</span> =
+name_arbitrary_address_capable;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; <span class="co1">//
+printf ("*** Measurement started ***\n");</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; address_valid = <span class="nu0">0</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; ac_timer.<span class="me1">timeout</span> = <span class="nu0">250</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; tx_timer.<span class="me1">timeout</span> = <span class="nu0">500</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; timerStart <span class="br0">(</span>tx_timer<span class="br0">)</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; send_address_claimed <span class="br0">(</span><span class="br0">)</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1"><span class="br0">}</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">on timer ac_timer <span class="br0">{</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; address_valid = <span class="nu0">1</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1"><span class="br0">}</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">on CanMessage AddressClaimed <span class="br0">{</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; <span class="kw1">if</span>
+    <span class="br0">(</span><span class="br0">(</span><span class="kw1">this</span>.<span class="me1">flags</span>
+&amp; CANMSG_FLAG_TXACK<span class="br0">)</span>
+== <span class="nu0">0</span><span class="br0">)</span>
+    <span class="br0">{</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; <span class="kw1">if</span> <span class="br0">(</span><span class="br0">(</span><span class="kw1">this</span>.<span class="me1">sa</span> == node_address<span class="br0">)</span> &amp;&amp; <span class="br0">(</span>node_address != <span class="nu0">254</span><span class="br0">)</span><span class="br0">)</span> <span class="br0">{</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; &nbsp; <span class="kw4">int</span> cres = <span class="nu0">0</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; &nbsp; cres
+= compare_names <span class="br0">(</span>msg_ac.<span class="me1">data</span>, <span class="kw1">this</span>.<span class="me1">data</span><span class="br0">)</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; &nbsp;
+printf <span class="br0">(</span><span class="st0">"Conflict: AddressClaimed: pgn=%d, pri=%d,
+sa=%02x, da=%02x, cres=%d<span class="es0">\n</span>"</span>,</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; <span class="kw1">this</span>.<span class="me1">pgn</span>,</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; <span class="kw1">this</span>.<span class="me1">pri</span>,</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; <span class="kw1">this</span>.<span class="me1">sa</span>,</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; <span class="kw1">this</span>.<span class="me1">da</span>,</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; cres<span class="br0">)</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; &nbsp;
+timerCancel <span class="br0">(</span>ac_timer<span class="br0">)</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; &nbsp; <span class="kw1">if</span> <span class="br0">(</span>cres
+&lt; <span class="nu0">0</span><span class="br0">)</span><span class="br0">{</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; &nbsp;
+&nbsp;printf<span class="br0">(</span><span class="st0">"I (NodeA) win!<span class="es0">\n</span>"</span><span class="br0">)</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; &nbsp;
+&nbsp;send_address_claimed <span class="br0">(</span><span class="br0">)</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; &nbsp;
+&nbsp;<span class="br0">}</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; &nbsp; <span class="kw1">else</span> <span class="br0">{</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; &nbsp;
+&nbsp; printf<span class="br0">(</span><span class="st0">"I (NodeA) loose!<span class="es0">\n</span>"</span><span class="br0">)</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; &nbsp;
+&nbsp; node_address = <span class="nu0">254</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; &nbsp;
+&nbsp; address_valid = <span class="nu0">1</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; &nbsp;
+&nbsp; send_address_claimed <span class="br0">(</span><span class="br0">)</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; &nbsp; <span class="br0">}</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; <span class="br0">}</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; <span class="br0">}</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1"><span class="br0">}</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">on action <span class="st0">"Set
+Node Address"</span> <span class="br0">{</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; <span class="kw4">int</span>
+pi;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; <span class="kw4">int</span>
+addr;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; pi = panelItemGetIdByName <span class="br0">(</span><span class="st0">"node_a_address"</span><span class="br0">)</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; <span class="kw1">if</span>
+    <span class="br0">(</span>pi &gt;= <span class="nu0">0</span><span class="br0">)</span>
+    <span class="br0">{</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; addr =
+panelItemGetValueInt <span class="br0">(</span>pi<span class="br0">)</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; printf <span class="br0">(</span><span class="st0">"New
+Address=%d<span class="es0">\n</span>"</span>,
+addr<span class="br0">)</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; node_address =
+addr;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; address_valid =
+    <span class="nu0">0</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp;
+send_address_claimed <span class="br0">(</span><span class="br0">)</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; <span class="br0">}</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1"><span class="br0">}</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">on action <span class="st0">"Toggle
+LED"</span> <span class="br0">{</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; printf <span class="br0">(</span><span class="st0">"Toggle
+LED<span class="es0">\n</span>"</span><span class="br0">)</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; led_on = !led_on;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; <span class="co1">//printf
+("Start sending\n");</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; <span class="co1">//timerStart
+(tx_timer);</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1"><span class="br0">}</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">on stopped <span class="br0">{</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; printf <span class="br0">(</span><span class="st0">"***
+Stopped ***<span class="es0">\n</span>"</span><span class="br0">)</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1"><span class="br0">}</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">on timer tx_timer <span class="br0">{</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; CanMessage msg_led;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; timerStart <span class="br0">(</span>tx_timer<span class="br0">)</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; <span class="kw1">if</span>
+    <span class="br0">(</span>address_valid
+&amp;&amp; <span class="br0">(</span>node_address
+!= <span class="nu0">254</span><span class="br0">)</span><span class="br0">)</span> <span class="br0">{</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; <span class="kw1">if</span> <span class="br0">(</span>led_on<span class="br0">)</span> msg_led.<span class="me1">pgn</span>
+= <span class="nu0">92</span> &lt;&lt; <span class="nu0">8</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; <span class="kw1">else</span>&nbsp;
+msg_led.<span class="me1">pgn</span> = <span class="nu0">94</span> &lt;&lt; <span class="nu0">8</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; msg_led.<span class="me1">sa</span>&nbsp; = node_address;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; msg_led.<span class="me1">da</span>&nbsp; = 0xff;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; msg_led.<span class="me1">pri</span> = <span class="nu0">3</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; msg_led.<span class="me1">flags</span> = CANMSG_FLAG_EXT_ID;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; msg_led.<span class="me1">dlc</span> = <span class="nu0">8</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; msg_led.<span class="me1">data</span> <span class="br0">[</span><span class="nu0">0</span><span class="br0">]</span>
+= 0x00;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; msg_led.<span class="me1">data</span> <span class="br0">[</span><span class="nu0">1</span><span class="br0">]</span>
+= 0x00;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; msg_led.<span class="me1">data</span> <span class="br0">[</span><span class="nu0">2</span><span class="br0">]</span>
+= 0x00;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; msg_led.<span class="me1">data</span> <span class="br0">[</span><span class="nu0">3</span><span class="br0">]</span>
+= 0x00;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; msg_led.<span class="me1">data</span> <span class="br0">[</span><span class="nu0">4</span><span class="br0">]</span>
+= 0x00;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; msg_led.<span class="me1">data</span> <span class="br0">[</span><span class="nu0">5</span><span class="br0">]</span>
+= 0x00;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; msg_led.<span class="me1">data</span> <span class="br0">[</span><span class="nu0">6</span><span class="br0">]</span>
+= 0x00;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; msg_led.<span class="me1">data</span> <span class="br0">[</span><span class="nu0">7</span><span class="br0">]</span>
+= 0x00;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; &nbsp; canSendMessage <span class="br0">(</span>msg_led<span class="br0">)</span>;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp; <span class="br0">}</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1"><span class="br0">}</span></div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1">&nbsp;</div>
+
+  </li>
+
+  <li class="li1">
+    <div class="de1"><a href="http://qbnz.com/highlighter">
+    <img src="http://qbnz.com/highlighter/images/powered-by-geshi.png" alt="Powered by GeSHi">
+    </a>
+    </div>
+
+  </li>
+
+</ol>
+
+</div>
+
+</body>
+</html>

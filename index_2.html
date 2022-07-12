@@ -1,0 +1,449 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>J1939 CAN bus spy, Chapt. 2</title>
+<meta content="text/html; charset=unicode" http-equiv="Content-Type">
+<meta name="description" content="J1939 and CAN bus - RS232 spy using Microchip PIC18F4580.">
+<meta name="keywords" content="J1939, CAN bus, RS232, spy, simulation">
+<style type="text/css">
+BODY {font-family: Verdana,courier;} .myText {COLOR: #339900} .quoted {COLOR: gray} .highlite {BACKGROUND-COLOR: #ffff33} A:hover { TEXT-DECORATION: underline; FONT-WEIGHT: bold }
+BODY {
+background : transparent url(images/gutter_gray.png) repeat-y;
+}
+div.float {
+float: left;
+}
+div.float p {
+text-align: center;
+}
+div.row span.left {
+float: left;
+text-align: left;
+font-weight: bold;
+width: 50%;
+}
+div.row span.right {
+float: right;
+text-align: right;
+font-weight: bold;
+width: 50%;
+}
+</style></head>
+<body><table width="600"> <tbody> <tr>
+<td> <h3>Chapter 2<br> </h3> <h3>J1939.c
+CAN Bus plus RS232&nbsp;(continued)</h3> <a href="index.html">&lt;&lt;back to main page</a><br><br>
+<div align="center"> <table style="width: 90%;">
+<tbody> <tr> <td><span class="quoted">Abstract
+of
+the <a title="previous chapter" href="index_1.html">preceding
+chapter</a>:<br>
+Microchip
+provided <a href="http://ww1.microchip.com/downloads/en/AppNotes/J1939.zip">source
+code</a> <img style="width: 15px; height: 16px;" alt="zip" src="images/zip.gif"> for <a href="http://ww1.microchip.com/downloads/en/AppNotes/00930a.pdf">J1939.c
+CAN library</a> <img style="width: 16px; height: 16px;" alt="pdf" src="images/pdf.gif"> (Kim
+Otten et al.), plus Application Maestro generated
+code&nbsp;UARTIntC.c, were used to implement a bare-bones system
+with a 2-node CAN bus, where node #129 upon receiving commands from
+#128
+to toggle a LED also output strings "ON" and "OFF" thru the RSR23.</span></td>
+</tr> </tbody> </table> </div> <br> <br>
+Now
+we become more ambitious: we want to spy the CAN bus traffic and log
+it to our PC's screen so that we can leisurely study it (we like things
+that difficult:=).<br> <br>
+After much head scratching, we hit upon this:
+let us keep the 2 nodes #128 and #129 exchanging messages, and add a
+3rd
+node, #130, listening to them, and reporting to the PC.<br> <div style="text-align: center;"><img style="width: 347px; height: 334px;" alt="CAN Uart with 3 nodes" src="images/schema3_redux.png" hspace="4" vspace="4"><br>
+<br> <br> </div> <div style="text-align: center;"><img title="The UART is sending CAN buffers of messages addressed to him" style="width: 353px; height: 291px;" alt="3 PIC effort" src="images/3_pic_effort_pc.png"><br> </div> <div style="text-align: center;"><br> </div>
+So we
+moved the UARTIntC.c code to a third device, node #130, and here go the
+details.<br> <ol> <br> <li> <a href="#J1939.c_-_what_to_change">What
+to
+change in J1939.c&nbsp;</a> </li> <li><a href="#Capturing_and_analyzing_CAN_bus_messages">Capturing
+and analyzing CAN bus messages</a></li> <li> <a href="#What_is_next">What's next?</a> </li> </ol>
+<hr style="width: 100%; height: 2px;"> <h4><span style="font-weight: bold;"><a name="J1939.c_-_what_to_change"></a>J1939.c&nbsp;
+- what to change</span></h4>
+What CAN J1939 messages are our simple 2 nodes sending each other?<br>
+And how do they map into the PIC18F4580 receiver buffers?<br> <br>
+<!--
+Let us keep in mind these objects from the source J1939.H:<br>
+<br>
+<div style="margin-left: 40px;"><code>#define
+J1939_RX_QUEUE_SIZE 3</code><br>
+<code>...</code><br>
+<code>J1939_MESSAGE&nbsp;&nbsp;&nbsp;RXQueue[J1939_RX_QUEUE_SIZE];</code><br>
+<code>...</code><br>
+<code>typedef
+union &nbsp;&nbsp;J1939_MESSAGE_UNION &nbsp; J1939_MESSAGE;</code><br>
+<code>...</code><br>
+<code>union
+J1939_MESSAGE_UNION {</code><br>
+<code>&nbsp;&nbsp;&nbsp; struct {</code><br>
+<code>&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; unsigned
+int&nbsp;&nbsp;&nbsp; PDUFormat_Top&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; : 3;&nbsp;&nbsp;&nbsp; //
+This needs pre and post processing.</code><br>
+<code>&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; unsigned
+int&nbsp;&nbsp;&nbsp;
+DataPage&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; : 1;</code><br>
+<code>&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; unsigned
+int&nbsp;&nbsp;&nbsp; Res&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; : 1;</code><br>
+<code>&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; unsigned
+int&nbsp;&nbsp;&nbsp;
+Priority&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; : 3;</code><br>
+<code>&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; unsigned
+char&nbsp;&nbsp;&nbsp;PDUFormat;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; // CA should use only PDUFormat.</code><br>
+<code>&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; unsigned
+char&nbsp;&nbsp;&nbsp;PDUSpecific;</code><br>
+<code>&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; unsigned
+char&nbsp;&nbsp;&nbsp;SourceAddress;</code><br>
+<code>&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; unsigned
+int&nbsp;&nbsp;&nbsp; DataLength
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; : 4;</code><br>
+<code>&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; unsigned
+int&nbsp;&nbsp;&nbsp; RTR&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; : 4;&nbsp;&nbsp;&nbsp; //
+RTR bit, value always 0x00</code><br>
+<code>&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; unsigned
+char&nbsp;&nbsp;&nbsp;Data[J1939_DATA_LENGTH];</code><br>
+<code>&nbsp;&nbsp;&nbsp;
+};</code><br>
+<code>&nbsp;&nbsp;&nbsp; unsigned
+char&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+Array[J1939_MSG_LENGTH + J1939_DATA_LENGTH];</code><br>
+<code>};</code><br>
+<code>where:</code><br>
+<code>#define
+J1939_MSG_LENGTH&nbsp;&nbsp;&nbsp; 5</code><br>
+<code>#define
+J1939_DATA_LENGTH&nbsp;&nbsp;&nbsp; 8</code><br>
+<code></code></div>
+<br>
+-->To
+have a look into it, in a sort of reverse engineering and hacking mood
+(<span style="font-weight: bold;">yes, we could had just
+studied the j1939.c sources...</span>) we grafted our
+crafty UART calls into 4 places of the function <code>J1939_ReceiveMessages&nbsp;</code>in
+our third node, #130, resulting in a slightly modified firmware: <br>
+<br> <div style="margin-left: 40px;"><code><span style="color: rgb(0, 0, 153);">static void</span>
+J1939_ReceiveMessages( <span style="color: rgb(0, 0, 153);">void</span>
+)<br>
+{<br>
+&nbsp;&nbsp;...<br>
+&nbsp; ... graft 1: send char "<span style="color: rgb(0, 153, 0);">A</span>"
+to signal a buffer dump starts<br> </code> <div style="margin-left: 40px;"><code><span style="color: rgb(0, 0, 153);">#if 1</span><br>
+&nbsp;&nbsp;&nbsp; <span style="color: rgb(0, 153, 0);">//
+beg-bracket the message inserted by us</span><br>
+&nbsp;&nbsp;&nbsp; UARTIntPutChar('A');<br> <span style="color: rgb(0, 0, 153);">#endif</span><br>
+</code></div> <code>&nbsp; ...<br>
+&nbsp; ... graft 2: send every CAN
+received byte to UARTIntPutChar (head):<br> </code> <div style="margin-left: 40px;"><code><span style="color: rgb(0, 0, 153);">#if 1</span><br>
+&nbsp;&nbsp;&nbsp; <span style="color: rgb(0, 153, 0);">//
+copy RxBuffers to UART</span><br>
+&nbsp;&nbsp;&nbsp; UARTIntPutChar(OneMessage.Array[Loop]);<br>
+<span style="color: rgb(0, 0, 153);">#endif</span><br>
+</code></div> <code>&nbsp; ... graft
+4:&nbsp;send every CAN
+received byte to UARTIntPutChar (data):<br> </code> <div style="margin-left: 40px;"><code><span style="color: rgb(0, 0, 153);">#if 1</span><br>
+&nbsp;&nbsp;&nbsp; <span style="color: rgb(0, 153, 0);">//
+copy RxBuffers to UART</span><br>
+&nbsp;&nbsp;&nbsp; UARTIntPutChar(OneMessage.Data[Loop]);<br>
+<span style="color: rgb(0, 0, 153);">#endif</span><br>
+</code></div> <code>&nbsp; ... graft 3: send
+char "<span style="color: rgb(0, 153, 0);">B</span>"
+to signal the
+buffer dumps ends<br> </code> <div style="margin-left: 40px;"><code><span style="color: rgb(0, 0, 153);">#if 1</span><br>
+&nbsp;&nbsp;&nbsp; <span style="color: rgb(0, 153, 0);">//
+end-bracket the message inserted by us</span><br>
+&nbsp;&nbsp;&nbsp; UARTIntPutChar('B');<br> <span style="color: rgb(0, 0, 153);">#endif</span><br>
+</code></div> <code>&nbsp; ...<br>
+}<br> <br> <br> </code>The other 2 nodes are
+much as before, but now we
+added a second switch
+to #128 pin RB6, which sends LED ON/OFF commands to our new #130.<br>
+<br>
+You can download the 3 projects files, one for each node, from here:<br>
+<br> <a href="code/CAN_Uart_02_130.zip">download
+CAN-UART
+project</a> (#130) <img style="width: 15px; height: 16px;" alt="zip" src="images/zip.gif"><br> <a href="code/CAN_Uart_02_128.zip">download
+CAN-only
+project </a>(#128) <img style="width: 15px; height: 16px;" alt="zip" src="images/zip.gif"><br> <a href="code/CAN_Uart_02_129.zip">download
+CAN-only
+project </a>(#129) <img style="width: 15px; height: 16px;" alt="zip" src="images/zip.gif"><br> <a href="code/CAN_Uart_01_128.zip"><br> </a></div>
+<br>
+Now everything addressed to our smart node #130 is send to our PC's
+Terminal program, as the middle 2 calls dump the affected RxBuffers to
+the UART.<br> <br> <hr style="width: 100%; height: 2px;"> <h4><a name="Capturing_and_analyzing_CAN_bus_messages"></a>Capturing
+and analyzing CAN bus messages</h4>
+Next we had the thing
+running, switching #128 pin RB4 to Vcc and GND (our
+makeshift&nbsp;switch), thereby sending LED ON/OFF commands to our
+#130
+"spy", and this is what we get into Terminal (as before, I used as
+terminal the excelent <a href="http://bray.velenje.cx/avr/terminal/">Terminal
+v1.9b</a> provided by Bray++ configured to 57600 baud and Hex
+display (see figure):<br> <br> <img style="width: 691px; height: 260px;" alt="Terminla capture" src="images/terminal_2_redux.png"><br> <br>
+After copy &amp; paste we have this (for clarity's sake,
+ASCII and hex are mixed, and the adornments generated by ourselves are
+in <span style="color: rgb(0, 153, 0);">green</span>).<br>
+This is going to be boring!<br> <br> <div align="center"> <table style="width: 90%;" border="0" cellpadding="2" cellspacing="2"> <tbody>
+<tr> <td><span class="quoted">Our current
+design
+has a serious flaw: our spy
+has its filters set to its
+own&nbsp;address, and so it "sees" only messages sent to him
+specifically (or to the global address).<br>
+Later on we will fix
+that, by
+now we live happily with this limitation.</span></td> </tr>
+</tbody> </table> </div> <br> <br> <div style="margin-left: 40px;"><code style="color: rgb(0, 153, 0);">"CANUart004"</code><code>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;our
+"I'm
+alive" string we send at powerup</code><br> <code><span style="color: rgb(0, 153, 0);">"A"</span>
+67 7A FF 80
+08 32 00 00 00 00 00 00 00 <span style="color: rgb(0, 153, 0);">"B"</span>&nbsp;</code><code>can
+address negotiation</code><code> (from node #128)</code><br>
+<code><span style="color: rgb(0, 153, 0);">"A"</span></code><code>&nbsp;67
+7A FF 81 08 33 00 00 00 00 00 00 00&nbsp;</code><code><span style="color: rgb(0, 153, 0);">"B"</span></code><code>
+idem</code><code> (from node #129)</code><br> <code><span style="color: rgb(0, 153, 0);">"A"</span></code><code>&nbsp;62
+FA 82 80 00&nbsp;</code><code><span style="color: rgb(0, 153, 0);">"B"</span></code><code>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp;&nbsp;</code><code>toggle LED command</code><br>
+<code><span style="color: rgb(0, 153, 0);">"A"</span></code><code>&nbsp;62
+F8 82 80 00&nbsp;</code><code><span style="color: rgb(0, 153, 0);">"B"</span></code><br>
+<code><span style="color: rgb(0, 153, 0);">"A"</span></code><code>&nbsp;62
+FA 82 80 00&nbsp;</code><code><span style="color: rgb(0, 153, 0);">"B"</span></code><br>
+<code>...
+etc.</code><br> <code></code></div> <br>
+The string <code style="color: rgb(0, 153, 0);">"CANUart004"</code>
+is generated by us at startup, to be sure that the UART is OK, and
+really has nothing to do with the CAN bus.<br> <br>
+Now
+let also peruse J9139-xx definitions:<br> <br> <div align="center"> <table style="background-color: rgb(238, 238, 238); width: 90%;" border="0" cellpadding="2" cellspacing="2"> <tbody>
+<tr> <td>SAE
+J1939-81<br>
+4.1.2 Addresses<br>
+An
+address is a one-byte value identifying a particular CA in a network.
+The address of a CA is incorporated into the identifier of every
+message sent by that CA and is used to provide uniqueness to messages
+that are sent by the CA.occur. Each ECU must be capable of announcing
+which address(es) it intends to use.<br> <br>
+SAE J1939-21<br>
+The
+Address Claim PGN is sent to the global destination address even though
+the request for it may have been to a specific destination address (see
+J1939-81).</td> </tr> </tbody> </table> <br>
+</div> <div align="center"> <br> <table style="background-color: rgb(238, 238, 238); width: 90%;" border="0" cellpadding="2" cellspacing="2"> <tbody>
+<tr> <td>3.1.3
+Addresses and NAME (J1939/81 and Appendix B)<br> <br>
+Each
+ECU on the network will have at least one name and one address
+associated with it. (...) The address of an ECU defines a specific
+communications source or destination for messages, the name includes
+identification of the primary function performed at that address and
+adds an indication of the instance of that functionality in the event
+that multiple ECUs with the same primary function coexist on the same
+network. As many as 254 different ECUs of the same function can coexist
+on the network, each identified by their own address and name.<br>
+To
+uniquely name each ECU, J1939 defines a 64 bit NAME consisting of the
+fields shown in Table 1.(...)<br> <br>
+In
+general, most ECUs will use their Preferred Addresses immediately upon
+power up. A specific procedure (defined in J1939/81 and elaborated on
+in J1939/01) for assigning addresses after powerup is used to resolve
+any conflicts that may occur. Each ECU must be capable of announcing
+which address(es) it intends to use.</td> </tr> </tbody>
+</table> </div> <br>
+Back to our first
+2 captured strings (leaving out "A" and "B" brackets generated by us):<br>
+<br> <div style="margin-left: 40px;"><code><span style="color: rgb(0, 153, 0);"></span>67 7A FF 80
+08 32 00 00 00 00 00 00 00 </code><code>&nbsp;
+&nbsp; can
+address negotiation</code><code> (from node #128)</code><br>
+<code></code><code><span style="color: rgb(0, 153, 0);"></span></code><code>67
+7A FF 81 08 33 00 00 00 00 00 00 00</code><code><span style="color: rgb(0, 153, 0);"></span></code><code>
+&nbsp; &nbsp; idem</code><code> (from node #129)</code><br>
+</div> <br>
+According
+to the PIC18F2480/2580/4480/4580
+data &nbsp;book, page 290, the first 5 RX buffers are:<br> <br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">RXBnSIDH</span>: RECEIVE
+BUFFER n STANDARD IDENTIFIER REGISTERS, High Byte<br> <span style="color: rgb(204, 102, 204);">SID10 SID9
+SID8 SID7 SID6 SID5 SID4 SID3</span> (<span style="color: rgb(204, 102, 204);">Standard Identifier bits</span>)<br>
+<br> <span style="font-weight: bold;">RXBnSIDL</span>:
+RECEIVE
+BUFFER n STANDARD IDENTIFIER REGISTERS, LOW BYTE<br> <span style="color: rgb(204, 102, 204);">SID2 SID1
+SID0</span> <span style="color: rgb(0, 153, 0);">SRR
+EXID &mdash;</span> <span style="color: rgb(102, 102, 204);">EID17 EID16</span> (<span style="color: rgb(204, 102, 204);">Standard Identifier bits</span>
++ <span style="color: rgb(102, 102, 204);">Extended
+Identifier bits</span>)<br> <br> <span style="font-weight: bold;">RXBnEIDH</span>:
+RECEIVE BUFFER n EXTENDED IDENTIFIER REGISTERS, HIGH BYTE<br> <span style="color: rgb(102, 102, 204);">EID15
+EID14 EID13 EID12 EID11 EID10 EID9 EID8</span> (<span style="color: rgb(102, 102, 204);">Extended Identifier bits</span>)<br>
+<br> <span style="font-weight: bold;">RXBnEIDL</span>:
+RECEIVE
+BUFFER n EXTENDED IDENTIFIER REGISTERS, LOW BYTE<br> <span style="color: rgb(102, 102, 204);">EID7 EID6
+EID5 EID4 EID3 EID2 EID1 EID0</span> (<span style="color: rgb(102, 102, 204);">Extended Identifier bits</span>)<br>
+<br> <span style="font-weight: bold;">RXBnDLC</span>:
+RECEIVE
+BUFFER n DATA LENGTH CODE REGISTERS [0 &le; n &le; 1]<br>
+<span style="font-weight: bold;"></span>&mdash;
+RXRTR
+RB1 RB0 <span style="color: rgb(153, 0, 0);">DLC3 DLC2
+DLC1 DLC0</span> (<span style="color: rgb(153, 0, 0);">Data
+Length Code bits</span>)<br> </div> <br>
+Converting
+the first 5 received bytes (#define
+J1939_MSG_LENGTH&nbsp;&nbsp;&nbsp; 5) to bits, and using
+the same color schema as above::<br> <br> <div style="margin-left: 40px;"><span style="font-weight: bold; color: rgb(204, 102, 204);">011</span><span style="color: rgb(204, 102, 204);">0 0111 011</span><span style="color: rgb(0, 153, 0);">1 10</span><span style="color: rgb(102, 102, 204);">10
+1111 1111 1000 0000</span> <span style="color: rgb(204, 102, 0);">0000 1000</span> <br>
+</div> <br>
+More stuff from J1939-81:<br> <br> <div align="center">
+<table style="text-align: left; background-color: rgb(238, 238, 238); width: 80%;" border="0" cellpadding="2" cellspacing="2"> <tbody>
+<tr> <td><code>(SAE
+J1939-81&nbsp;4.2.2.1 Address Claimed Message)<br> <br>
+Data
+length: 8 bytes<br>
+Data page 0<br>
+PDU
+format: 238<br>
+PDU specific: 255 (global address)<br>
+Default
+priority: 6<br>
+Parameter group number: 60928 (00EE0016)<br>
+Source
+Address 0 to 253 (Address claimed for the Controller Application<br>
+</code></td> </tr> </tbody> </table> <br>
+</div>
+And
+more stuff from SAE J1939-21:<br> <code></code><img style="width: 689px; height: 266px;" alt="J1939 PDU" src="images/j1939PDU.png"><br> <div style="margin-left: 40px;"><span style="font-weight: bold; color: rgb(204, 102, 204);"><br>
+<span style="text-decoration: underline;">011</span></span><span style="color: rgb(204, 102, 204);"> 0 0 <span style="text-decoration: underline;">111 011</span></span><span style="color: rgb(0, 153, 0); text-decoration: underline line-through;">1
+10</span><span style="color: rgb(102, 102, 204);"><span style="text-decoration: underline;">10</span>
+1111 1111 <span style="color: rgb(153, 153, 153);">1000
+0000</span></span> <span style="color: rgb(204, 102, 0);">0000 1000</span> <br>
+&nbsp; &nbsp; &nbsp; R DP<br> </div> <br>
+Every field described in J1939-xx above is to be found here:<br> <ol>
+<li>The
+leftmost 3 bits <span style="font-weight: bold; color: rgb(204, 51, 204);">011</span>
+are the message
+priority <span style="font-weight: bold;">P</span></li>
+<li>Next, <span style="font-weight: bold;">R</span>
+and <span style="font-weight: bold;">DP</span>
+(Data page) bits are both 0</li> <li>Next
+we have <span style="color: rgb(204, 51, 204);">1110 11</span><span style="text-decoration: line-through;">110</span><span style="color: rgb(204, 51, 204);">10</span> = 0xEE =
+238 (<span style="font-weight: bold;">PF</span>,
+Address Claimed Message PDU
+Format), where the three striken bits are <span style="color: rgb(0, 153, 0);">SRR
+EXID &mdash;</span> bits that are poked into <span style="font-weight: bold;">RXBnEIDH</span> (see above)
+by the PIC18F4580's CAN module hardware.</li> <li>Next
+we have <span style="color: rgb(102, 0, 204);">0xFF</span>
+(<span style="font-weight: bold;">PS</span>
+PDU specific: 255 (global address))</li> <li>And then <span style="color: rgb(153, 153, 153);">0x80</span>
+= #128 which is the <span style="font-weight: bold;">SA </span>Source
+Address<br>
+(in the second message, 0x81 = #129)</li> <li>Lastly, the
+Data Length: <span style="color: rgb(204, 102, 0);">08</span>
+= 8 bytes</li> </ol> <br> <div style="margin-left: 40px;">You will find all
+this defined in the
+source files:<br>
+#define
+J1939_CONTROL_PRIORITY &nbsp; 0x03<br>
+#define J1939_STARTING_ADDRESS &nbsp; 128 (0x80 = 128)<br>
+#define J1939_STARTING_ADDRESS &nbsp; 129 (0x81 = 129)<br>
+#define&nbsp;J1939_GLOBAL_ADDRESS &nbsp;&nbsp; &nbsp;
+255 (0xFF)<br>
+etc.<br> </div> <br> <br>
+The "toggle LED command" follow the same pattern:<br> <br>
+<div style="margin-left: 40px;"><code><span style="color: rgb(0, 153, 0);"></span></code><code>62
+FA 82 80 00</code><code><span style="color: rgb(0, 153, 0);"></span></code><code>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp;&nbsp;</code><code>toggle OFF LED command</code><code></code><br>
+<code><span style="color: rgb(0, 153, 0);"></span></code><code>62
+F8 82 80 00</code><code>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp;&nbsp;</code><code>toggle ON LED command</code><code><span style="color: rgb(0, 153, 0);"></span></code><br>
+</div> <br> <div style="margin-left: 40px;"><span style="font-weight: bold; color: rgb(204, 102, 204);"><span style="text-decoration: underline;">011</span></span><span style="color: rgb(204, 102, 204);"> 0 0 <span style="text-decoration: underline;">010 111</span></span><span style="color: rgb(0, 153, 0); text-decoration: underline line-through;">1
+10</span><span style="color: rgb(102, 102, 204);"><span style="text-decoration: underline;">10</span>
+1000 0010 <span style="color: rgb(153, 153, 153);">1000
+0000</span></span> <span style="color: rgb(204, 102, 0);">0000 0000</span> <br>
+&nbsp; &nbsp; &nbsp; R DP<br> <ol> <li>The
+leftmost 3 bits <span style="font-weight: bold; color: rgb(204, 51, 204);">011</span>
+are the message
+priority <span style="font-weight: bold;">P</span></li>
+<li>Next, <span style="font-weight: bold;">R</span>
+and <span style="font-weight: bold;">DP</span>
+(Data page) bits are both 0</li> <li>Next
+we have <span style="color: rgb(204, 51, 204);">0101 11</span><span style="text-decoration: line-through;">110</span><span style="color: rgb(204, 51, 204);">10</span> = 0x5E =
+94 (<span style="font-weight: bold;">PF</span>,
+"toggle OFF" PDU Format), where the three striken bits are <span style="color: rgb(0, 153, 0);">SRR
+EXID &mdash;</span> bits that are poked into <span style="font-weight: bold;">RXBnEIDH</span> (see above)
+by the PIC18F4580's CAN module hardware.<br>
+(the second message PDU Format = 0x5C = 92 is the "toggle ON")</li>
+<li>Next
+we have <span style="color: rgb(102, 0, 204);">0x82</span>
+(<span style="font-weight: bold;">PS</span>
+PDU specific: #130, our spy address)</li> <li>And then <span style="color: rgb(153, 153, 153);">0x80</span>
+= #128 which is the <span style="font-weight: bold;">SA </span>Source
+Address, the node that sent the command<br> </li> <li>Lastly,
+the Data Length: <span style="color: rgb(204, 102, 0);">00</span>
+= 0 bytes,
+as nothing more is needed</li> </ol> <br> </div>
+<div style="margin-left: 80px;">You will find all
+this defined in the
+source files:<br>
+#define TURN_ON_LED&nbsp;&nbsp;&nbsp;
+&nbsp;92&nbsp;<br>
+#define TURN_OFF_LED&nbsp;&nbsp;&nbsp; 94<br>
+#define J1939_STARTING_ADDRESS 130<br> </div> <br> <br>
+<hr style="width: 100%; height: 2px;"> <h4><a name="What_is_next"></a>What is
+next?</h4>
+As we said, our toy spy is just paying attention to messages addressed
+to himself.<br>
+Nothing that changing to "listening only" mode will not cure - that we
+leave
+to the next chapter.<br> <br> <hr style="width: 100%; height: 2px;"><br> <br>
+And thats
+all, folks.<br>
+Please let me know of any broken links, missing
+parts etc. you may find here.<br>
+Next issue will be more
+sophisticated - I hope!.<br> <br>
+Quoted documents:<br> <span class="quoted">Microchip&nbsp;<a href="http://ww1.microchip.com/downloads/en/AppNotes/J1939.zip">source
+code</a> <img style="width: 15px; height: 16px;" alt="zip" src="images/zip.gif"> for <a href="http://ww1.microchip.com/downloads/en/AppNotes/00930a.pdf">J1939.c
+CAN library</a> <img style="width: 16px; height: 16px;" alt="pdf" src="images/pdf.gif"> (Kim
+Otten et al.)<br>
+Application Maestro generated
+code&nbsp;UARTIntC.c<br> </span><span class="quoted">SAE
+J1939 Revised
+AUG2003</span><br class="quoted"> <span class="quoted">SAE J1939-21</span><br class="quoted">
+<span class="quoted">SAE J1939-81</span><br> <span class="quoted"></span><br> <div align="center"><a href="http://www.flowerdeliverydeals.com/"><img src="http://c4.amazingcounters.com/counter.php?i=890627&amp;c=2672194" alt="Send Flowers" border="0"></a><br> <small><a href="http://www.amazingcounters.com"><font color="#999999">Free Hit Counter</font></a></small></div>
+<br> <a href="index.html">&lt;&lt;back to
+main page</a><br> <br> <a href="mailto:recursos.pt@gmail.com">&copy;Rec</a>
+&nbsp;(recursos.pt@gmail.com) <br>
+06-02-21<br> <br> </td> </tr> </tbody>
+</table><br>
+<br></body></html>

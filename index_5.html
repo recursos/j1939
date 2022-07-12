@@ -1,0 +1,1147 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+  <title>J1939 CAN bus spy, Chapt. 5 Simulation with CANoe</title>
+
+
+  <meta content="text/html; charset=unicode" http-equiv="Content-Type">
+
+  <meta content="SAE J1939 and CAN bus - RS232 spy using Microchip PIC18F4580." name="description">
+
+  <meta content="SAE J1939, CAN bus, CANbus, RS232, spy, simulation, SAE, Microchip" name="keywords">
+
+  <style type="text/css">
+td { font-family: Verdana,courier;
+font-size: 10pt;
+}
+.myText { color: rgb(51, 153, 0);
+}
+.quoted { color: gray;
+}
+.highlite { background-color: rgb(255, 255, 51);
+}
+a:hover { text-decoration: underline;
+font-weight: bold;
+}
+  </style>
+</head>
+
+
+<body>
+
+<table style="width: 800px;">
+
+  <tbody>
+
+    <tr>
+
+      <td>
+      <h3>Chapter 5<br>
+
+      </h3>
+
+      <h3>J1939.c
+CAN Bus plus RS232&nbsp;(continued)</h3>
+
+      <h4 style="text-align: center;"><span style="font-weight: bold;">"Address Claiming" simulation
+with Vector's CANoe</span></h4>
+
+&lt;&lt; <a href="index.html">back to main
+page</a><br>
+
+&lt;&lt; <a href="index_4.html">previous chapter</a>
+(CAN bus software emulators)<br>
+
+      <div style="text-align: right;">(Michael Eisele's
+Xtm CAN bus simulator) <a target="_blank" href="index_6.html">next
+chapter</a>
+&gt;&gt;<br>
+
+      </div>
+
+      <br>
+
+      <div align="center">
+      <table style="width: 90%;">
+
+        <tbody>
+
+          <tr>
+
+            <td><span class="quoted">Abstract
+of
+the <a title="previous chapter" href="index_1.html">1rst
+chapter</a>:<br>
+
+Microchip
+provided <a href="http://ww1.microchip.com/downloads/en/AppNotes/J1939.zip">source
+code</a> <img style="width: 15px; height: 16px;" alt="zip" src="images/zip.gif"> for <a href="http://ww1.microchip.com/downloads/en/AppNotes/00930a.pdf">J1939.c
+CAN library</a> <img style="width: 16px; height: 16px;" alt="pdf" src="images/pdf.gif"> (Kim
+Otten et al.), plus Application Maestro generated
+code&nbsp;UARTIntC.c, were used to implement a bare-bones system
+with a 2-node CAN bus, where node #129 upon receiving commands from
+#128
+to toggle a LED also output strings "ON" and "OFF" thru the RSR23.<br>
+
+            <br>
+
+Abstract of the <a href="index_2.html">2nd chapter</a>:<br>
+
+            </span><span class="quoted">We kept the
+2 nodes #128 and #129 exchanging messages, and added a
+3rd
+node, #130, listening to them, and reporting to the PC. Everything
+addressed to our smart node #130 was send to our PC's
+Terminal program, dumping the affected RxBuffers to
+the UART.<br>
+
+            <br>
+
+Abstract of the <a href="index_3.html">3rd chapter</a>:<br>
+
+Our smart node #130 was put in <span style="font-weight: bold;">ListenOnly</span>
+mode, all masks to zeros - a
+true "spy", now.<br>
+
+But because the firmware J1939.c generates so few messages, the overall
+result is not much exciting.<br>
+
+            <br>
+
+Abstract of the <a href="index_4.html">4th chapter</a>:<br>
+
+            </span><span class="quoted">So we want
+to improve our basic firmware, but that means going deeper into
+understanding the </span><span class="quoted" style="font-weight: bold;">SAE
+J1939 protocol</span><span class="quoted">
+(automotive, commercial vehicles, etc.).</span><br class="quoted">
+
+            <span class="quoted">We could use some help in
+that, and luckily there are at least 2 free
+"demos" available which we can use to simulate the bus.</span><br>
+
+            <span class="quoted"></span><span class="quoted"></span></td>
+
+          </tr>
+
+        </tbody>
+      </table>
+
+      <br>
+
+      <br>
+
+      <table style="width: 70%;" border="0" cellpadding="2" cellspacing="2">
+
+        <tbody>
+
+          <tr>
+
+            <td style="background-color: rgb(224, 224, 224); text-align: left;">Don't
+want to miss the next chapter? just drop me
+an email to <span style="font-weight: bold;">recursos.pt@gmail.com</span>
+subject: J1939 CAN, and I will notify you.<br>
+
+No other use will be made of your e-mail address.</td>
+
+          </tr>
+
+        </tbody>
+      </table>
+
+      <br>
+
+      <br>
+
+      </div>
+
+Who needs a <span style="font-weight: bold;">CAN/J1939
+simulator</span>? Well, if you are learning <span style="font-weight: bold;">CAN/J1939</span>
+surely you can use it, among others, to test if the <span style="font-weight: bold;">NMT</span> behaviour
+(network management) you have coded and believe is OK, is indeed
+conforming to the SAE standard.<br>
+
+&gt;&nbsp;is a wonderful tool for that, and on top of
+its price can't be beaten (yes, the limited but functional
+demo&nbsp;is free). <br>
+
+It does a lot more than what we need or can understand (!), but let us
+have
+a look at just a small parcel of it.
+      <ol>
+
+        <br>
+
+        <li> <a href="#The_Address_Claiming_simulation_with_CANoe">The J1939
+"Address Claiming" simulation with CANoe&nbsp;</a> </li>
+
+        <li><a href="#The_CAPL_language">The CAPL
+language</a></li>
+
+        <li><a href="#And_it_comes_with_fancy_graphic_panels">And
+it comes with fancy graphic panels, too</a></li>
+
+        <li><a href="#What_is_next">What's next?</a>
+        </li>
+
+      </ol>
+
+      <hr style="width: 100%; height: 2px;">
+      <h4><span style="font-weight: bold;"><a name="The_Address_Claiming_simulation_with_CANoe"></a>The
+"Address Claiming" simulation with CANoe </span></h4>
+
+      <br>
+
+First, <span style="font-weight: bold;">Address Claiming</span>
+is one J1939 network management <span style="font-style: italic;">process</span>
+(<span style="font-weight: bold;">NMT</span>), <span style="font-weight: bold;">Address
+Claimed</span> is a <span style="font-style: italic;">message</span>
+- one of the Address Management Messages.<br>
+
+Continuing from the previous chapter, start <span style="font-weight: bold;">CANoe</span>, accept the
+disclaimer, then open the file:<br>
+
+      <br>
+
+MyProjectFolder\AddressCaliming\AddressClaiming_CN.cfg (ignore the
+warning "The configuration does not contain a chip...").<br>
+
+      <br>
+
+      <div align="center">
+      <table style="background-color: rgb(224, 224, 224); width: 80%;" border="0" cellpadding="2" cellspacing="2">
+
+        <tbody>
+
+          <tr>
+
+            <td colspan="1" rowspan="1" style="text-align: left;"><font size="-1">Please
+remember
+that we copied 2 complete folders from:<br>
+
+            <br>
+
+Program Files\CANoe 5.2\Demo_J1939_CN\<span style="font-weight: bold;">Database</span><br>
+
+Program Files\CANoe
+5.2\Demo_J1939_CN\MoreExamples\<span style="font-weight: bold;">AddressClaiming</span><br>
+
+            <br>
+
+to our own project folder; then with a text editor,
+we edited <span style="font-weight: bold;">AddressClaiming_CN.cfg</span>
+to point to the new path of <span style="font-weight: bold;">Database\J1939.dbc</span>.<br>
+
+            </font></td>
+
+          </tr>
+
+        </tbody>
+      </table>
+
+      </div>
+
+      <br>
+
+Your screen will look like:<br>
+
+      <br>
+
+      <div style="text-align: center;"><img style="width: 430px; height: 292px;" alt="opening screen shot" title="opening screen shot" src="images/chapt_5/acl_config.png"></div>
+
+      <br>
+
+Now start the simulation with Start\Start menu or F9, wait a momment
+then stop (red spot).<br>
+
+You will have something like that:<br>
+
+      <br>
+
+      <div style="text-align: center;"><img style="width: 430px; height: 292px;" alt="NMT trace stopped" title="NMT trace stopped" src="images/chapt_5/trace_stoped.png"><br>
+
+      <div style="text-align: left;"><br>
+
+The left pane is the "Trace NMT" (<span style="font-weight: bold;">NMT</span>:
+Network Management Traffic, in
+our case messages like Address Claimed).<br>
+
+Clicking one of the + (plus) signs to expand the last trace line,
+shows the NAME fields:<br>
+
+      <br>
+
+      <div style="text-align: center;"><img style="width: 641px; height: 401px;" alt="trace expanded" title="NMT trace expanded" src="images/chapt_5/trace_expanded.png"></div>
+
+      <br>
+
+In the expanded line we can see the several fields of the Address
+Claimed message for Node
+3.<br>
+
+The nine fields from ArbitraryAddressCapable to IdentityNumber fields
+form the <span style="font-weight: bold;">NAME</span>
+as described in <span style="font-weight: bold;">SAE
+J1939-81</span>.<br>
+
+      <br>
+
+Notice that ArbitraryAddressCapable == 1. Quoting <span style="font-weight: bold;">SAE J1939-81</span>:<br>
+
+      <br>
+
+      <div style="text-align: center;">
+      <table style="background-color: rgb(224, 224, 224); width: 80%; text-align: left; margin-left: auto; margin-right: auto;" border="0" cellpadding="2" cellspacing="2">
+
+        <tbody>
+
+          <tr>
+
+            <td>3.3.2 Arbitrary Address Capable CA<br>
+
+An Arbitrary Address Capable CA is one that can select its source
+address from any appropriate SA (including those in the range 128 to
+247 inclusive) based on internal algorithms, and then claim that
+address.<br>
+
+This CA, in cases of address conflict, is also able to re-calculate its
+address and re-claim (unless all 120 of the addresses between 128 and
+247 are used).<br>
+
+The value in the Arbitrary Address Capable field in the NAME (See
+Section 4.1.1.2) indicates whether or not a CA has this capability.</td>
+
+          </tr>
+
+        </tbody>
+      </table>
+
+      <div style="text-align: left;"><br>
+
+(where CA means <span style="font-weight: bold;">Controller
+Application</span>)<br>
+
+Because in our simulation we have graphic "panels" where we can select
+a new
+address for the node, it was defined as Arbitrary Address Capable -
+there is indeed no algorithm to do it, we just type in a new address,
+the same way a field technician could change a dip switch.</div>
+
+      </div>
+
+      <br>
+
+You have 2 tabs at the bottom of the main window: <span style="font-style: italic;">Setup</span> and <span style="font-style: italic;">Measurement</span>.
+Click <span style="font-style: italic;">Setup</span>
+to be back to the first view, then on the left
+pane double-click over CAN Networks\Nodes\Node3 (ECU 2).<br>
+
+The CAPL browser opens. CANoe's help describes what CAPL is:<br>
+
+      <br>
+
+      <table style="background-color: rgb(224, 224, 224); width: 80%; text-align: left; margin-left: auto; margin-right: auto;" border="0" cellpadding="2" cellspacing="2">
+
+        <tbody>
+
+          <tr>
+
+            <td>
+            <p style="margin-top: 0px; font-weight: bold; margin-bottom: 0px;"><span class="hcp2">C</span>ommunication <span class="hcp2">A</span>ccess <span class="hcp2">P</span>rogramming
+            <span class="hcp2">L</span>anguage</p>
+
+            <p>The CAPL language allows you to write programs for
+individual applications. For example, in the development of network
+nodes, the problem often arises that the remaining bus nodes are not
+available yet for tests. The system environment can be emulated with
+the help of CAPL, e.g. the data traffic of all remaining stations can
+be emulated.</p>
+
+            <p>With CAPL you can also write programs to analyze
+data traffic which are adapted to your problem, or programs for a
+gateway &ndash; a connection element between two buses &ndash;
+so that data can be exchanged between different CAN buses.</p>
+
+            <p>The emphasis in modeling lies in the description
+of the node&lsquo;s bus behavior, for which the language
+capabilities of CAPL are normally sufficient.</p>
+
+            </td>
+
+          </tr>
+
+        </tbody>
+      </table>
+
+      <br>
+
+      <div style="text-align: center;"><img style="width: 754px; height: 337px;" alt="CAPL browser, Node 3" title="CAPL browser, Node 3" src="images/chapt_5/node3_capl.png"><br>
+
+      </div>
+
+      <br>
+
+If you study the ACL message ACL :: 0x18EEFEFE, first thing you will
+notice is that the ID 0x18EEEFEF is just wrong...<br>
+
+But don't waste time around it, these strings are not used anywhere.<br>
+
+      <br>
+
+0x18 = 11000 (priority 110 = 6 OK, then R and DP bits 0 also OK)<br>
+
+0xEE = 238 is PDU format, OK<br>
+
+0xFE = 254, null address, is fact is the Cannot Claim Address message
+(the Cannot Claim Address message is the same PGN as the Address
+Claimed message but has a source address of 254, the null address).<br>
+
+0xFE is wrong, it should read 0xFF, PDU specific.<br>
+
+      <br>
+
+This is what <span style="font-weight: bold;">SAE J1939-81</span>
+tell us:<br>
+
+      <br>
+
+      <br>
+
+      <table style="background-color: rgb(224, 224, 224); width: 80%; text-align: left; margin-left: auto; margin-right: auto;" border="0" cellpadding="2" cellspacing="2">
+
+        <tbody>
+
+          <tr>
+
+            <td>No valid claim may be made for Address 254, the
+null
+address. An Address Claimed message sent with address 254 as the source
+address is a Cannot Claim Address message (see 4.2.2.2).<br>
+
+The Address Claimed message should always be sent to the global address
+(255) to provide all ECUs on the network the information to maintain a
+current address to NAME correspondence. The Address Claimed message
+should be sent to the global address (255) even when requested in a
+destination specific message. The Address Claimed message is an
+exception to the requirements on request messages specified in SAE
+J1939-21. (SAE J1939-21 defines that a request message that is directed
+to a specific address be responded to with the destination set to the
+requester.)<br>
+
+            <br>
+
+4.2.2.1 Address Claimed Message<br>
+
+Transmission rate: As required<br>
+
+Data length: 8 bytes<br>
+
+Data page 0<br>
+
+PDU format: 238<br>
+
+PDU specific: 255 (global address)<br>
+
+Default priority: 6<br>
+
+Parameter group number: 60928 (00EE0016)<br>
+
+Source Address 0 to 253 (Address claimed for the Controller Application)<br>
+
+            <br>
+
+NAME of Controller Application<br>
+
+Byte: 1 Bits 8-1 Least significant byte of Identity Number See 4.1.1.11<br>
+
+Byte: 2 Bits 8-1 Second byte of Identity Number See 4.1.1.11<br>
+
+Byte: 3 Bits 8-6 Least significant 3 bits of Manufacturer Code See
+4.1.1.10<br>
+
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Bits
+5-1 Most significant 5 bits of Identity Number See 4.1.1.11<br>
+
+Byte: 4 Bits 8-1 Most significant 8 bits of Manufacturer Code See
+4.1.1.10<br>
+
+Byte: 5 Bits 8-4 Function Instance See 4.1.1.8<br>
+
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Bits
+3-1 ECU Instance See 4.1.1.9<br>
+
+Byte: 6 Bits 8-1 Function See 4.1.1.7<br>
+
+Byte: 7 Bits 8-2 Vehicle System See 4.1.1.5<br>
+
+&nbsp; &nbsp; &nbsp; &nbsp; Bit 1 Reserved See 4.1.1.6<br>
+
+Byte: 8 Bit 8 Arbitrary Address Capable See 4.1.1.2<br>
+
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Bits
+7-5 Industry Group See 4.1.1.3<br>
+
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Bits
+4-1 Vehicle System Instance See 4.1.1.4</td>
+
+          </tr>
+
+        </tbody>
+      </table>
+
+      <br>
+
+      <br>
+
+So 0x18EEFEFE is probably a "typo", but it does no harm, that string is
+never
+used, is just there to make the database look better...<br>
+
+Next message, AC :: 0x18FED8FE is correct (Commanded Address,
+PGN&nbsp;65240, PF 254, PS 216, SA<br>
+
+Next message,&nbsp;RQST :: x018EAFEFE (Request PG (request for
+Address
+Claimed) PGN 59904, PF 234, PS DA but the destination address cannot be
+FE, again it really does not matter, SA)<br>
+
+      <br>
+
+      <br>
+
+      </div>
+
+      </div>
+
+      <hr style="width: 100%; height: 2px;">
+      <h4><a name="The_CAPL_language"></a>The
+CAPL language</h4>
+
+Back to&nbsp;CAPL browser, to the code in the left-top pane:<br>
+
+      <ol>
+
+      </ol>
+
+      <pre><code><font color="#0000ff"><br></font></code></pre>
+
+      <div style="margin-left: 40px;"><code><font color="#0000ff"><font color="#008080"><i>/*</i></font></font></code><br>
+
+      <code><font color="#0000ff"><font color="#008080"><i> * Node3 - Simple node with address
+claiming Version 1.0</i></font></font></code><br>
+
+      <code><font color="#0000ff"><font color="#008080"><i> *</i></font></font></code><br>
+
+      <code><font color="#0000ff"><font color="#008080"><i> * Copyright 2005, Vector
+Informatik GmbH - All right reserved</i></font></font></code><br>
+
+      <code><font color="#0000ff"><font color="#008080"><i> *</i></font></font></code><br>
+
+      <code><font color="#0000ff"><font color="#008080"><i> * History:</i></font></font></code><br>
+
+      <code><font color="#0000ff"><font color="#008080"><i> * 1.0 (Jr) Created </i></font></font></code><br>
+
+      <code><font color="#0000ff"><font color="#008080"><i> */</i></font></font></code><br>
+
+      <code><font color="#0000ff">variables</font></code><br>
+
+      <code><font color="#0000ff"><font color="#000000">{</font></font></code><br>
+
+      <code><font color="#0000ff"><font color="#008080"><i>// Constants</i></font></font></code><br>
+
+      <code><font color="#0000ff"><font color="#800080">const int</font> kNullAddr <font color="#000000">=</font> <font color="#ff0080">0xfe</font><font color="#000000">;</font> <font color="#008080"><i>&nbsp;&nbsp;//
+Null address</i></font></font></code><br>
+
+      <code><font color="#0000ff"><font color="#800080">const int</font> kGlobalAddr <font color="#000000">=</font> <font color="#ff0080">0xff</font><font color="#000000">;</font> <font color="#008080"><i>
+// Global address</i></font></font></code><br>
+
+      <code><font color="#0000ff"><font color="#800080">const int</font> kSuccess <font color="#000000">=</font> <font color="#ff0080">0</font><font color="#000000">;</font> <font color="#008080"><i>&nbsp;
+&nbsp; &nbsp; // Nodelayer function returns 0 on success</i></font></font></code><br>
+
+      <code><font color="#0000ff"><font color="#800080">const int</font> kInitialized <font color="#000000">=</font> <font color="#ff0080">0</font><font color="#000000">;</font> &nbsp; <font color="#008080"><i> // </i></font></font></code><br>
+
+      <code><font color="#0000ff"><font color="#800080">const int</font> kClaiming <font color="#000000">=</font> <font color="#ff0080">1</font><font color="#000000">;</font> <span style="font-family: mon;"><span style="font-style: italic;"> </span></span><font color="#008080"><i>&nbsp; &nbsp; &nbsp;// </i></font></font></code><br>
+
+      <code><font color="#0000ff"><font color="#800080">const int</font> kOnline <font color="#000000">=</font> <font color="#ff0080">2</font><font color="#000000">;</font> <font color="#008080"><i>&nbsp;
+&nbsp; &nbsp;&nbsp; // </i></font></font></code><br>
+
+      <code><font color="#0000ff"><font color="#800080">const int</font> kOffline <font color="#000000">=</font> <font color="#ff0080">3</font><font color="#000000">;</font> <font color="#008080"><i>&nbsp;
+&nbsp; &nbsp; // </i></font></font></code><br>
+
+      <code><font color="#0000ff"><font color="#800080">char</font> gNodeName<font color="#000000">[</font><font color="#ff0080">32</font><font color="#000000">] =</font> "Node3"<font color="#000000">;</font> <font color="#008080"><i>
+// Name of the node, is used for output to write window</i></font></font></code><br>
+
+      <code></code><br>
+
+      <code><font color="#0000ff"><font color="#008080"><i>// simulation constants</i></font></font></code><br>
+
+      <code><font color="#0000ff"><font color="#008080"><i>// communication variables</i></font></font></code><br>
+
+      <code><font color="#0000ff">BYTE gECUAddress <font color="#000000">=</font> kNullAddr<font color="#000000">;</font> <font color="#008080"><i>//
+Address of this ECU</i></font></font></code><br>
+
+      <code><font color="#0000ff">BYTE gECUState <font color="#000000">=</font> kInitialized<font color="#000000">;</font><font color="#008080"><i>//
+Communication state of the ECU</i></font></font></code><br>
+
+      <code><font color="#0000ff">BYTE gACLPending <font color="#000000">=</font> <font color="#ff0080">0</font><font color="#000000">;</font> <font color="#008080"><i>&nbsp;
+&nbsp; &nbsp; &nbsp;&nbsp;// 1, if sending ACL</i></font></font></code><br>
+
+      <code><font color="#0000ff">BYTE gACLRqPending
+      <font color="#000000">=</font> <font color="#ff0080">0</font><font color="#000000">;</font>
+      <font color="#008080"><i> // 1, if sending
+request for ACL was received during address claiming</i></font></font></code><br>
+
+      <code><font color="#0000ff">pg ACL TX_ACL<font color="#000000">;</font> <font color="#008080"><i>&nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp;&nbsp; // TX Buffer: Address Claiming</i></font></font></code><br>
+
+      <code><font color="#0000ff">pg ACKM TX_ACKM<font color="#000000">;</font> <font color="#008080"><i>&nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; // TX
+Buffer: Acknowledge</i></font></font></code><br>
+
+      <code><font color="#0000ff">pg HB_Node3 TX_HB<font color="#000000">;</font> <font color="#008080"><i>&nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;// Tx Buffer:
+Heartbeat</i></font></font></code><br>
+
+      <code><font color="#0000ff">msTimer ACLTimer<font color="#000000">;</font> <font color="#008080"><i>&nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; // Timer for
+address claiming</i></font></font></code><br>
+
+      <code><font color="#0000ff">msTimer TX_HB_Timer<font color="#000000">;</font></font></code><br>
+
+      <code></code><br>
+
+      <code><font color="#0000ff"><font color="#008080"><i>// Definition of debugging constants</i></font></font></code><br>
+
+      <code><font color="#0000ff"><font color="#800080">const int</font> kDbgInfo <font color="#000000">=</font> <font color="#ff0080">10</font><font color="#000000">;</font></font></code><br>
+
+      <code><font color="#0000ff"><font color="#800080">const int</font> kDbgWarning <font color="#000000">=</font> <font color="#ff0080">5</font><font color="#000000">;</font></font></code><br>
+
+      <code><font color="#0000ff"><font color="#800080">const int</font> kDbgError <font color="#000000">=</font> <font color="#ff0080">1</font><font color="#000000">;</font></font></code><br>
+
+      <code><font color="#0000ff"><font color="#800080">const int</font> kDbgQuiet <font color="#000000">=</font> <font color="#ff0080">0</font><font color="#000000">;</font></font></code><br>
+
+      <code></code><br>
+
+      <code><font color="#0000ff"><font color="#008080"><i>// General global variables</i></font></font></code><br>
+
+      <code><font color="#0000ff"><font color="#800080">int</font> gDbgLevel <font color="#000000">=</font> kDbgWarning<font color="#000000">;</font> <font color="#008080"><i>
+// Set debug level for output to write window</i></font></font></code><br>
+
+      <code><font color="#0000ff"><font color="#000000">}</font></font></code><br>
+
+      <code></code></div>
+
+      <pre><code><br></code></pre>
+
+Let us look also in CAPL browser at Functions\EnterClaiming():<br>
+
+      <pre><code><font color="#0000ff"><br></font></code></pre>
+
+      <div style="margin-left: 40px;"><code><font color="#0000ff"><font color="#008080"><i>/*</i></font></font></code><br>
+
+      <code><font color="#0000ff"><font color="#008080"><i> * Start address claiming</i></font></font></code><br>
+
+      <code><font color="#0000ff"><font color="#008080"><i> */</i></font></font></code><br>
+
+      <code><font color="#0000ff"><font color="#800080">void</font> EnterClaiming<font color="#000000">()</font></font></code><br>
+
+      <code><font color="#0000ff"><font color="#000000">{</font></font></code><br>
+
+      <code><font color="#0000ff">cancelTimer<font color="#000000">(</font> ACLTimer <font color="#000000">);</font></font></code><br>
+
+      <code><font color="#0000ff">cancelTimer<font color="#000000">(</font> TX_HB_Timer <font color="#000000">);</font></font></code><br>
+
+      <code></code><br>
+
+      <code><font color="#0000ff"><font color="#008080"><i>// send address claiming PG and
+wait 250ms</i></font></font></code><br>
+
+      <code><font color="#0000ff">TX_ACL<font color="#000000">.</font>SA <font color="#000000">=</font>
+gECUAddress<font color="#000000">;</font></font></code><br>
+
+      <code><font color="#0000ff">TX_ACL<font color="#000000">.</font>DA <font color="#000000">=</font>
+kGlobalAddr<font color="#000000">;</font></font></code><br>
+
+      <code><font color="#0000ff">TX_ACL<font color="#000000">.</font>ArbitraryAddressCapable <font color="#000000">=</font> Node3<font color="#000000">.</font>NmJ1939AAC<font color="#000000">;</font></font></code><br>
+
+      <code><font color="#0000ff">TX_ACL<font color="#000000">.</font>IndustryGroup <font color="#000000">=</font> Node3<font color="#000000">.</font>NmJ1939IndustryGroup<font color="#000000">;</font></font></code><br>
+
+      <code><font color="#0000ff">TX_ACL<font color="#000000">.</font>VehicleSystem <font color="#000000">=</font> Node3<font color="#000000">.</font>NmJ1939System<font color="#000000">;</font></font></code><br>
+
+      <code><font color="#0000ff">TX_ACL<font color="#000000">.</font>VehicleSystemInstance <font color="#000000">=</font> Node3<font color="#000000">.</font>NmJ1939SystemInstance<font color="#000000">;</font></font></code><br>
+
+      <code><font color="#0000ff">TX_ACL<font color="#000000">.</font>Function <font color="#000000">=</font> Node3<font color="#000000">.</font>NmJ1939Function<font color="#000000">;</font></font></code><br>
+
+      <code><font color="#0000ff">TX_ACL<font color="#000000">.</font>FunctionInstance <font color="#000000">=</font> Node3<font color="#000000">.</font>NmJ1939FunctionInstance<font color="#000000">;</font></font></code><br>
+
+      <code><font color="#0000ff">TX_ACL<font color="#000000">.</font>ECUInstance <font color="#000000">=</font> Node3<font color="#000000">.</font>NmJ1939ECUInstance<font color="#000000">;</font></font></code><br>
+
+      <code><font color="#0000ff">TX_ACL<font color="#000000">.</font>ManufacturerCode <font color="#000000">=</font> Node3<font color="#000000">.</font>NmJ1939ManufacturerCode<font color="#000000">;</font></font></code><br>
+
+      <code><font color="#0000ff">TX_ACL<font color="#000000">.</font>IdentityNumber <font color="#000000">=</font> Node3<font color="#000000">.</font>NmJ1939IdentityNumber<font color="#000000">;</font></font></code><br>
+
+      <code></code><br>
+
+      <code><font color="#0000ff">gACLPending <font color="#000000">=</font> <font color="#ff0080">1</font><font color="#000000">;</font></font></code><br>
+
+      <code></code><br>
+
+      <code><font color="#0000ff">output<font color="#000000">(</font> TX_ACL <font color="#000000">);</font></font></code><br>
+
+      <code></code><br>
+
+      <code><font color="#0000ff">putValue<font color="#000000">(</font> EvNode3_Address<font color="#000000">,</font> kNullAddr <font color="#000000">);</font></font></code><br>
+
+      <code></code><br>
+
+      <code><font color="#0000ff">setTimer<font color="#000000">(</font> ACLTimer<font color="#000000">,</font> <font color="#ff0080">250</font>
+      <font color="#000000">);</font></font></code><br>
+
+      <code></code><br>
+
+      <code><font color="#0000ff">writeDbgLevel<font color="#000000">(</font> kDbgInfo<font color="#000000">,</font> "&lt;%s&gt; start
+address claiming for address %d"<font color="#000000">,</font>
+gNodeName<font color="#000000">,</font> TX_ACL<font color="#000000">.</font>SA <font color="#000000">);</font></font></code><br>
+
+      <code><font color="#0000ff"><font color="#000000">}</font></font></code><br>
+
+      <code></code></div>
+
+      <br>
+
+      <br>
+
+You
+will notice the CAPL code mixes "microcontroller" like code with code
+controlling the simulation interface (environment). For
+example, function<font color="#0000ff">
+putValue </font>() assigns a value to a environment
+variable,&nbsp;<font color="#0000ff">setTimer</font>()
+sets a
+timer, and defines time events in CAPL.<br>
+
+When this timer event occurs, i.e. when a certain period of time
+elapses, the associated&nbsp;<font color="#0000ff">on
+timer</font> procedure is called.<br>
+
+      <br>
+
+Under the Environement item you will find events that are generated by
+(or
+control) the user interface, like the graphic panels, the example
+below occurs when the panel (generated by Node1.cnp) is used to change
+the Claimed address:<br>
+
+      <br>
+
+      <div style="text-align: center;"><img style="border: 1px solid ; width: 130px; height: 136px;" alt="panel node 1" title="panel node1" src="images/chapt_5/panel_node1.png"><br>
+
+      </div>
+
+      <br>
+
+      <div style="margin-left: 40px;"><code><font color="#0000ff"><font color="#008040"><i>/*</i></font></font></code><br>
+
+      <code><font color="#0000ff"><font color="#008040"><i> * Change address</i></font></font></code><br>
+
+      <code><font color="#0000ff"><font color="#008040"><i> */</i></font></font></code><br>
+
+      <code><font color="#0000ff">on envVar
+EvNode1_ChangeAddress</font></code><br>
+
+      <code><font color="#0000ff"><font color="#000000">{</font></font></code><br>
+
+      <code><font color="#0000ff">&nbsp; DWORD
+address<font color="#000000">;<br>
+
+      <br>
+
+      </font></font></code><code><font color="#0000ff"><b> &nbsp; if</b> <font color="#000000">(</font>getValue<font color="#000000">(</font><b>this</b><font color="#000000">) ==</font> <font color="#ff0080">1</font><font color="#000000">) {</font></font></code><br>
+
+      <code><font color="#0000ff">&nbsp;
+&nbsp; &nbsp;address <font color="#000000">=</font>
+getValue<font color="#000000">(</font>
+EvNode1_NewAddress <font color="#000000">);</font></font></code><br>
+
+      <code><font color="#0000ff"><b>&nbsp;
+&nbsp; &nbsp;if</b> <font color="#000000">(</font>address
+      <font color="#000000">&lt;</font> kNullAddr<font color="#000000">) {</font></font></code><br>
+
+      <code><font color="#0000ff">&nbsp;
+&nbsp; &nbsp; &nbsp;Node1StartUp<font color="#000000">(</font>
+address <font color="#000000">);</font></font></code><br>
+
+      <code><font color="#0000ff"><font color="#000000"> &nbsp; &nbsp; &nbsp;}</font></font></code><br>
+
+      <code><font color="#0000ff"><b>&nbsp;
+&nbsp; &nbsp;else</b> <font color="#000000">{</font></font></code><br>
+
+      <code><font color="#0000ff">&nbsp;
+&nbsp; &nbsp; &nbsp;Node1ShutDown<font color="#000000">();</font></font></code><br>
+
+      <code><font color="#0000ff"><font color="#000000"> &nbsp; &nbsp; &nbsp;}</font></font></code><br>
+
+      <code><font color="#0000ff"><font color="#000000"> &nbsp; &nbsp;}</font></font></code><br>
+
+      <code><font color="#0000ff"><font color="#000000">}</font></font></code><br>
+
+      <code></code></div>
+
+      <br>
+
+Changing the node address in the panel rises the&nbsp;<code><font color="#0000ff">on envVar</font></code> event
+trigging the procedure to modify the Node1 start up address.<br>
+
+      <br>
+
+      <div style="margin-left: 80px;">Now, I
+don't understand why, but this procedure runs always twice after we
+click on the panel button, once with <code><font color="#0000ff">getValue<font color="#000000">(</font><b>this</b><font color="#000000">)</font></font></code>==
+1, then with <code><font color="#0000ff">getValue<font color="#000000">(</font><b>this</b><font color="#000000">) == 0</font></font></code>
+(as you can check by adding a line like:<br>
+
+      <br>
+
+      </div>
+
+      <div style="margin-left: 120px;">write ("<span style="color: rgb(204, 102, 0);">%d</span> ",getValue(<code><font color="#0000ff"><b>this</b></font></code>));<br>
+
+      </div>
+
+      <div style="margin-left: 80px;"><br>
+
+on top of the procedure, to have it printed on the "write (sort of
+console)" window.<br>
+
+      </div>
+
+      <br>
+
+Let us try to change Node1 address to 3, thus causing a conflict
+with the existing Node3.<br>
+
+Like this we force the virtual nodes and CAN bus to do some work!<br>
+
+The NMT trace window displays:<br>
+
+      <br>
+
+      <div style="text-align: center;"><img style="width: 448px; height: 201px;" alt="node1 claims address 3" title="node1 claims address 3" src="images/chapt_5/node1_changed_to_3.png"><br>
+
+      </div>
+
+      <br>
+
+The first 3 lines show the start up claimed adresses at start up as
+usual.<br>
+
+After
+some time (about 5.5s), I forced virtual Node1 to address 3, which it
+claimed on the virtual CAN bus.<br>
+
+The last line shows us that poor Node3 droped the challenge... it is
+telling everybody (all = 255) that now its address is 254 (null). Why?
+back to <span style="font-weight: bold;">SAE
+J1939-81</span>:<br>
+
+      <br>
+
+      <div align="center">
+      <table style="text-align: left; background-color: rgb(224, 224, 224); width: 80%;" border="0" cellpadding="2" cellspacing="2">
+
+        <tbody>
+
+          <tr>
+
+            <td>If a CA receives an
+Adhttp://forum.microchip.com/tm.aspx?m=161181dress Claimed message
+claiming its own source address, it should compare the NAME that was
+received in the Address
+Claimed message with its own<br>
+
+NAME and determine which CA has a higher priority NAME (lower numeric
+value as described in 4.4.3.3).<br>
+
+If the CA receiving the Address Claim determines that it has the higher
+priority NAME it may then transmit an Address Claimed message
+containing its NAME and address. However if
+it has the lower priority NAME it should either attempt to claim a
+different address or send a Cannot
+Claim Address message.<br>
+
+A CA that loses address arbitration in this manner (...)<br>
+
+            <br>
+
+            <code>Address Claimed &nbsp; &nbsp;
+&nbsp; &nbsp;&nbsp; &nbsp; &nbsp;PGN &nbsp; PF
+&nbsp;PS &nbsp;SA &nbsp;DCL DATA<br>
+
+&nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp;Address Claimed 60928 238 255 SA &nbsp;8 &nbsp; NAME<br>
+
+Cannot Claim Source Address 60928 238 255 254 8 &nbsp; NAME</code></td>
+
+          </tr>
+
+        </tbody>
+      </table>
+
+      </div>
+
+      <br>
+
+Because Node3 NAME's IdentityNumber is 3, higher then Node1's
+1,&nbsp;it looses arbitration against
+Node1, and drops out.<br>
+
+As we see, the CANoe is a wonderful tool to play with <span style="font-weight: bold;">CAN/J1939</span>.<br>
+
+      <br>
+
+Even if one does not know what he is doing, the simulator gives the
+right responses, and from them you can learn-as-you-play. Of course, if
+one writes bad CAPL behaviour, there goes all the good behaviour!<br>
+
+      <br>
+
+      <center>
+      <table style="text-align: left; width: 60%;" border="0" cellpadding="10" cellspacing="2">
+
+        <tbody>
+
+          <tr>
+
+            <td style="background-color: rgb(255, 255, 0);">Warning:
+the sample CAPL code is wrong, function <span style="color: rgb(51, 51, 255);">utilCompareDeviceName
+()</span> is doing the comparison the wrong way, from NAME's
+least significant byte upwards - please see <a href="index_8.html">Chapter
+8</a><br>
+            </td>
+
+          </tr>
+
+        </tbody>
+      </table>
+
+      </center>
+
+      <br>
+
+But Vector's CANoe has a powerful feature called <span style="font-weight: bold;">CAPL Generator J1939</span>:<br>
+
+      <br>
+
+      <div align="center">
+      <table style="text-align: left; width: 80%;" border="0" cellpadding="2" cellspacing="2">
+
+        <tbody>
+
+          <tr>
+
+            <td style="background-color: rgb(224, 224, 224);">To
+simplify the design of a simulation, there is a CAPL code generator
+available for the J1939, ISO11783, and NMEA2000 options. This permits
+the generation of CAPL source code using the underlying communication
+relationships between individual ECUs (electronic control units).
+            <p></p>
+
+            </td>
+
+          </tr>
+
+        </tbody>
+      </table>
+
+      </div>
+
+      <br>
+
+I think (but never checked it:=) that this is a sort of wizard, that
+will
+keep us from making terrible mistakes regarding J1939 behaviour.<br>
+
+Anyway, the most critic aspect is the <span style="font-weight: bold;">NMT</span>, and CANoe's
+examples provide
+us with many chances to test our understanding of <span style="font-weight: bold;">J1939 NMT</span>.<br>
+
+      <br>
+
+      <hr style="width: 100%; height: 2px;">
+      <h4><a name="And_it_comes_with_fancy_graphic_panels"></a>And
+it comes with fancy graphic panels<br>
+
+      </h4>
+
+      <code></code>The graphic panels, controlled by mouse
+or keyboard, can be created with a Panel Editor. With them, the user
+can interactively change the values of discrete and continuous
+environment variables during the simulation, as well as display signals.<br>
+
+They use the ActiveX controls (.dll, .ocx) which those familiar with
+VisualBasic and
+.NET will already know.<br>
+
+Some showy samples
+follow:<br>
+
+      <div style="text-align: center;"><img style="width: 135px; height: 175px;" alt="vehicle ECU panel" title="vehicle ECU panel" src="images/chapt_5/vehicule_ecu.png">&nbsp;
+      <img style="width: 169px; height: 177px;" alt="accelerator panel" title="accelerator panel" src="images/chapt_5/accelerator_panel.png"><br>
+
+      </div>
+
+      <br>
+
+The TextBox <span style="font-weight: bold;">Vehicle Speed</span>
+showing "0" is named
+"<span style="font-weight: bold;">EnvVar:EvPT_Engine1Speed</span>";
+This name
+and the individual <font style="font-weight: bold;" color="#b70032">panel name</font>
+are
+used to
+access the control with specific <font style="font-weight: bold;" color="#b70032">CAPL
+commands</font>.&nbsp; An <font style="font-weight: bold;" color="#b70032">
+environment variable</font> is
+assigned&nbsp;to the element, in this case: "<span style="font-weight: bold;">EvVECU_VehicleSpeed</span>"
+(same to the analog gauge).<br>
+
+The CAPL code that updates the panel runs in the system Timer routine
+and is:<br>
+
+      <br>
+
+      <div style="margin-left: 40px;"><code><font color="#0000ff"><font color="#008040"><i>//
+update envVars</i></font></font><br>
+
+      <font color="#0000ff">putValue<font color="#000000">(</font> EvVECU_VehicleSpeed<font color="#000000">, </font>vehicleSpeed <font color="#000000">*</font> <font color="#ff0080">3.6</font>
+      <font color="#000000">);</font></font><br>
+
+      <font color="#0000ff">putValue<font color="#000000">(</font> EvTECU_OutputShaftSpeed<font color="#000000">, </font>axleSpeed <font color="#000000">);</font></font><br>
+
+      <font color="#0000ff">putValue<font color="#000000">(</font> EvTECU_InputShaftSpeed<font color="#000000">, </font>engineSpeed <font color="#000000">);</font></font><br>
+
+      <font color="#0000ff"><b>if</b> <font color="#000000">(</font>transmissionRatio <font color="#000000">&gt;</font> <font color="#ff0080">0</font><font color="#000000">)
+{</font></font><br>
+
+      <font color="#0000ff">&nbsp; &nbsp;putValue<font color="#000000">(</font> EvEMS_SimulationMode<font color="#000000">,</font> <font color="#ff0080">1</font>
+      <font color="#000000">);</font></font><br>
+
+      <font color="#0000ff">&nbsp; &nbsp;putValue<font color="#000000">(</font> EvEMS_EngineSpeed<font color="#000000">, </font>engineSpeed <font color="#000000">);</font></font><br>
+
+      <font color="#0000ff"><font color="#000000">}</font></font><br>
+
+      <font color="#0000ff"><b>else</b> <font color="#000000">{</font></font><br>
+
+      <font color="#0000ff">&nbsp; &nbsp;putValue<font color="#000000">(</font> EvEMS_SimulationMode<font color="#000000">,</font> <font color="#ff0080">0</font>
+      <font color="#000000">);</font></font><br>
+
+      <font color="#0000ff"><font color="#000000">}</font></font></code></div>
+
+      <br>
+
+      <hr style="width: 100%; height: 2px;">
+      <h4><a name="What_is_next"></a>What is
+next?</h4>
+
+This is going slower than antecipated, as I am not able to write more
+then one chapter every 12 days.<br>
+
+      <br>
+
+But as our goal is to simulate our small system with 3 PIC nodes,
+adding
+more and more messages, validating them with CANoe and then porting to
+the firmware, the next step is to improve the NMT of the thing.<br>
+
+      <br>
+
+Stay with&nbsp;us, may be we will get somewhere!<br>
+
+      <br>
+
+      <div align="center">
+      <table style="width: 70%;" border="0" cellpadding="2" cellspacing="2">
+
+        <tbody>
+
+          <tr>
+
+            <td style="background-color: rgb(224, 224, 224); text-align: left;">Don't
+forget: if you don't
+want to miss the next chapter, just drop me
+an email to <span style="font-weight: bold;">recursos.pt@gmail.com</span>
+subject: J1939 CAN, and I will notify you.<br>
+
+No other use will be made of your e-mail address.</td>
+
+          </tr>
+
+        </tbody>
+      </table>
+
+      </div>
+
+      <br>
+
+      <br>
+
+      <hr style="width: 100%; height: 2px;"><br>
+
+      <br>
+
+And that's
+all, folks.<br>
+
+Please let me know of any broken links, missing
+parts etc. you may find here.<br>
+
+Next issues will become more
+sophisticated - I hope!.<br>
+
+      <span class="quoted"></span><br>
+
+      <span class="quoted"></span><br>
+
+      <div align="center"><a href="http://www.flowerdeliverydeals.com/"><img src="http://c4.amazingcounters.com/counter.php?i=890627&amp;c=2672194" alt="Send Flowers" border="0"></a><br>
+
+      <small><a href="http://www.amazingcounters.com"><font color="#999999">Free Hit Counter</font></a></small></div>
+
+      <br>
+
+&lt;&lt; <a href="index.html">back to main
+page</a><br>
+
+&lt;&lt; <a href="index_4.html">previous chapter</a>
+(CAN bus software emulators)<br>
+
+      <div style="text-align: right;">(Michael Eisele's
+Xtm CAN bus simulator) <a target="_blank" href="index_6.html">next
+chapter</a>
+&gt;&gt;<br>
+
+      </div>
+
+      <br>
+
+      <a href="mailto:recursos.pt@gmail.com">&copy;Rec</a>
+&nbsp;(recursos.pt@gmail.com) <br>
+
+06-03-29<br>
+06-05-06 revised<br>
+
+      <br>
+
+      </td>
+
+    </tr>
+
+  </tbody>
+</table>
+
+<br>
+
+<br>
+
+</body>
+</html>

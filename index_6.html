@@ -1,0 +1,1420 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+
+  
+
+
+  
+  <title>J1939 CAN bus spy, Chapt. 6 J1939 Simulation with Xtm</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=unicode">
+
+
+  
+  <meta name="description" content="SAE J1939 and CAN bus - RS232 spy using Microchip PIC18F4580, CANoe, Xtm.">
+
+
+  
+  <meta name="keywords" content="SAE J1939, CAN bus, CANbus, RS232, spy, simulation, SAE, Microchip, CANoe, Xtm">
+
+
+  
+  <style type="text/css">
+td { font-family: Verdana,courier;
+font-size: 10pt;
+}
+.myText { color: rgb(51, 153, 0);
+}
+.quoted { color: gray;
+}
+.highlite { background-color: rgb(255, 255, 51);
+}
+a:hover { text-decoration: underline;
+font-weight: bold;
+}
+  </style>
+</head>
+
+
+<body>
+
+
+<table style="width: 800px;">
+
+
+  <tbody>
+
+
+    <tr>
+
+
+      <td>
+      
+      <h3>Chapter 6<br>
+
+
+      </h3>
+
+
+      
+      <h3>J1939.c
+CAN Bus plus RS232&nbsp;(continued)</h3>
+
+
+      
+      <h4 style="text-align: center;"><span style="font-weight: bold;"></span>Michael Eisele's 
+      <span style="font-weight: bold;">Xtm</span> <span style="font-weight: bold;">CAN bus simulator</span></h4>
+
+&lt;&lt; <a href="index.html">back to main
+page</a><br>
+
+&lt;&lt; <a href="index_5.html">previous chapter</a>
+(Vector's CANoe CAN bus simulator)
+      <br>
+      <div style="text-align: right;"><br>
+(The "J1939 Address
+Claiming" Microchip sample bug) <a href="index_7.html">next chapter</a> &gt;&gt;</div>
+
+
+      <br>
+
+
+      
+      <div align="center">
+      
+      <table style="width: 90%;">
+
+
+        <tbody>
+
+
+          <tr>
+
+
+            <td><span class="quoted">Abstract
+of
+the <a title="previous chapter" href="index_1.html">1rst
+Chapter</a>:<br>
+
+
+Microchip
+provided <a href="http://ww1.microchip.com/downloads/en/AppNotes/J1939.zip">source
+code</a> <img style="width: 15px; height: 16px;" alt="zip" src="images/zip.gif"> for <a href="http://ww1.microchip.com/downloads/en/AppNotes/00930a.pdf">J1939.c
+CAN library</a> <img style="width: 16px; height: 16px;" alt="pdf" src="images/pdf.gif"> (Kim
+Otten et al.), plus Application Maestro generated
+code&nbsp;UARTIntC.c, were used to implement a bare-bones system
+with a 2-node CAN bus, where node #129 upon receiving commands from
+#128
+to toggle a LED also output strings "ON" and "OFF" thru the RSR23.<br>
+
+
+            <br>
+
+
+Abstract of the <a href="index_2.html">2nd Chapter</a>:<br>
+
+
+            </span><span class="quoted">We kept the
+2 nodes #128 and #129 exchanging messages, and added a
+3rd
+node, #130, listening to them, and reporting to the PC. Everything
+addressed to our smart node #130 was send to our PC's
+Terminal program, dumping the affected RxBuffers to
+the UART.<br>
+
+
+            <br>
+
+
+Abstract of the <a href="index_3.html">3rd Chapter</a>:<br>
+
+
+Our smart node #130 was put in <span style="font-weight: bold;">ListenOnly</span>
+mode, all masks to zeros - a
+true "spy", now.<br>
+
+
+But because the firmware J1939.c generates so few messages, the overall
+result is not much exciting.<br>
+
+
+            <br>
+
+
+Abstract of the <a href="index_4.html">4th Chapter</a>:<br>
+
+
+            </span><span class="quoted">So we want
+to improve our basic firmware, but that means going deeper into
+understanding the </span><span class="quoted" style="font-weight: bold;">SAE
+J1939 protocol</span><span class="quoted">
+(automotive, commercial vehicles, etc.).</span><br class="quoted">
+
+
+            <span class="quoted">We could use some help in
+that, and luckily there are at least 2 free
+"demos" available which we can use to simulate the bus.<br>
+
+
+            <br>
+
+
+Abstract of the <a href="index_5.html">5th Chapter</a>:<br>
+
+
+            </span><span class="quoted">While
+learning </span><span class="quoted" style="font-weight: bold;">CAN/J1939</span><span class="quoted">
+a&nbsp;</span><span class="quoted" style="font-weight: bold;">CAN/J1939
+simulator</span><span class="quoted"> is a nice
+tool, among others, to test if the </span><span class="quoted" style="font-weight: bold;">NMT</span> behaviour
+(network management) you have coded and believe is OK, is indeed
+conforming to the SAE standard.<br class="quoted">
+
+
+            <span class="quoted">CANoe simulator is a
+wonderful tool for that, and on top of
+its price can't be beaten (yes, the limited but functional demo is
+free). We had
+a look at just a small parcel of it.</span><br>
+
+
+            <br>
+
+
+            <span class="quoted"></span><span class="quoted"></span></td>
+
+
+          </tr>
+
+
+        
+        </tbody>
+      
+      </table>
+
+
+      <br>
+
+
+      <br>
+
+
+      
+      <table style="width: 70%;" border="0" cellpadding="2" cellspacing="2">
+
+
+        <tbody>
+
+
+          <tr>
+
+
+            <td style="background-color: rgb(224, 224, 224); text-align: left;">Don't
+want to miss the next chapter? just drop me
+an email to <span style="font-weight: bold;">recursos.pt@gmail.com</span>
+subject: J1939 CAN, and I will notify you.<br>
+
+
+No other use will be made of your e-mail address.</td>
+
+
+          </tr>
+
+
+        
+        </tbody>
+      
+      </table>
+
+
+      </div>
+
+
+      <br>
+
+
+      <br>
+
+
+As we said before:<br>
+
+
+      <br>
+
+
+      
+      <div style="margin-left: 40px;"><a href="http://www.ibme.de/eng-xtm.html">Michael
+Eisele's&nbsp;<span style="font-weight: bold;">Xtm</span></a>
+"is a software environment used to
+control embedded network nodes (electronic control units). It can also
+be used to display and modify the inner states of that network nodes.
+Moreover it's possible to visualize the communication of embedded
+network nodes, to analyze it and, if required, to replace missing
+network nodes by simulation its network behaviour."<br>
+
+
+      </div>
+
+
+      
+      <p style="margin-left: 40px;">The current demo
+version 3.7 (Aug 03 2005) is available
+here.</p>
+
+
+      
+      <div style="margin-left: 40px;"><a href="download/xtm-setup-37.exe">Xtm
+V3.7, 03 Aug 2005</a>, approx. 3,5MB <br>
+
+
+      <br>
+
+
+      <br>
+
+
+Reading the help files and studying the samples did not take us very
+far, therefore we tried and request some guidance from Michael.<br>
+
+
+      </div>
+
+
+      <br>
+
+
+Meanwhile Michael kindly prepared a sample implementing about the same
+functionality as the CANoe's example of the last chapter - the Address
+Claimed message of the J1939 Address Claiming NMT procedure.<br>
+
+
+      
+      <ol>
+
+
+        <br>
+
+
+        <li> <a href="#The_Address_Claiming_simulation_with_Xtm">The
+"J1939&nbsp;Address Claiming" sample
+Xtm&nbsp;configuration&nbsp;</a> </li>
+
+
+        <li><a href="#2_-_The_nodes_Script_language">Xtm's
+nodes Script
+language</a></li>
+
+
+        <li><a href="#And_it_comes_with_fancy_graphic_panels">Xtm
+comes with graphic panels, too</a></li>
+
+
+        <li><a href="#What_is_next">What's next?</a>
+        </li>
+
+
+      
+      </ol>
+
+
+      
+      <hr style="width: 100%; height: 2px;">
+      
+      <h4><span style="font-weight: bold;"><a name="The_Address_Claiming_simulation_with_Xtm"></a></span><br>
+
+
+      <br>
+
+
+      </h4>
+
+
+      
+      <h4><span style="font-weight: bold;">1
+- The
+"J1939 Address Claiming" sample Xtm configuration </span></h4>
+
+
+      <br>
+
+
+First, <span style="font-weight: bold;">Address Claiming</span>
+is one J1939 network management <span style="font-style: italic;">process</span>
+(<span style="font-weight: bold;">NMT</span>), <span style="font-weight: bold;">Address
+Claimed</span> is a <span style="font-style: italic;">message</span>
+- one of the Address Management Messages.<br>
+
+
+      <br>
+
+
+Download Xtm from <a href="http://www.ibme.de/eng-xtm.html">Michael's
+site</a>, install, them download <a href="samples/acl01.zip">acl01.zip</a>
+      <img style="width: 15px; height: 16px;" alt="" src="images/zip.gif">, unzip and install under<br>
+
+
+Xtm37\Samples\AddressClaim<br>
+
+
+      <br>
+
+
+You will have 4 files:<br>
+
+
+      
+      <div style="margin-left: 40px;"><span style="font-weight: bold;">NodeA.sig</span><br style="font-weight: bold;">
+
+
+      <span style="font-weight: bold;">NodeB.sig</span><br style="font-weight: bold;">
+
+
+      <span style="font-weight: bold;">AddressClaim.xtm</span><br style="font-weight: bold;">
+
+
+      <span style="font-weight: bold;">j1939short.dbc</span><br>
+
+
+      </div>
+
+
+      <br>
+
+
+This is the short description Michael provided:<br>
+
+
+      <br>
+
+
+      <br>
+
+
+      
+      <div align="center">
+      
+      <table style="background-color: rgb(224, 224, 224); width: 70%;">
+
+
+        <tbody>
+
+
+          <tr>
+
+
+            <td>The configuration is as follows:<br>
+
+
+            <br>
+
+
+There are two CAN nodes configured. Both are mapped to the same
+(simulated) hardware channel. Both nodes have a script file attached.<br>
+
+
+            <br>
+
+
+Node A has also J1939 DBC file attached.<br>
+
+
+            <br>
+
+
+The sample should show some things:<br>
+
+
+            <br>
+
+
+            
+            <ol>
+
+
+              <li>If you look into the script file of node A, the
+contents of the&nbsp;CAN messages is accessed in a symbolic
+way, as Xtm is able to define&nbsp;the data structures based on the
+DBC
+file.<br>
+
+
+                <br>
+
+
+              </li>
+
+
+              <li>In node B everything is done numeric as there
+is no DBC file
+attached.<br>
+
+
+                <br>
+
+
+              </li>
+
+
+              <li>Node A does a cyclic transmission of the LED
+state. You can toggle it&nbsp;with a button.<br>
+
+
+                <br>
+
+
+              </li>
+
+
+              <li>With the line edit field and the button
+you can change the node&nbsp;address. If you enter 129 as address,
+a
+conflict should be detected and node A should stop sending.</li>
+
+
+The LED should display the LED state as it's seen by node B.<br>
+
+
+              <br>
+
+
+              <li>Both nodes send an address claimed message on
+startup.<br>
+
+
+                <br>
+
+
+              </li>
+
+
+            
+            </ol>
+
+
+            </td>
+
+
+          </tr>
+
+
+        
+        </tbody>
+      
+      </table>
+
+
+      </div>
+
+
+      <br>
+
+
+      <br>
+
+
+      <br>
+
+
+Now launch <span style="font-weight: bold;">Xtm</span>,
+accept the
+disclaimer, then load the configuration file <span style="font-weight: bold;">AddressClaim.xtm</span>.<br>
+
+
+Next choose <span style="font-weight: bold;">Interfaces</span>
+(or <span style="font-weight: bold;">Settings\Interface
+List</span>), to inspect the currente
+configuration:<br>
+
+
+      <br>
+
+
+      <br>
+
+
+      
+      <div align="center"> <img style="width: 526px; height: 382px;" alt="Interfaces List window" title="Interfaces List window" src="images/chapt_6/interface_list.png"></div>
+
+
+      <br>
+
+
+      <br>
+
+We see we are using a CAN interface (it could be also LIN, K-line,
+Ethernet etc.), with 2 instances, <span style="font-weight: bold;">NodeA</span>
+and <span style="font-weight: bold;">NodeB</span>. <br>
+
+
+Double-click the top line, to open the CAN Interface Configuration of <span style="font-weight: bold;">NodeA</span>:<br>
+
+
+      <br>
+
+
+      <br>
+
+
+      
+      <div align="center"> <img style="width: 485px; height: 447px;" alt="CAN Interface Configuration, NodeA" title="CAN Interface Configuration, NodeA" src="images/chapt_6/can_if_config.png"> </div>
+
+
+      <br>
+
+
+      <br>
+
+
+We ignore for now the other tabs, and will just dig a bit more the
+Global tag.<br>
+
+
+Notice that for <span style="font-weight: bold;">NodeA</span>
+a Database file <span style="font-weight: bold;">j1939Short.dbc</span>
+is attatched (to
+display&nbsp;nicely formated trace data in the Trace window), and a
+ScriptFile <span style="font-weight: bold;">NodeA.sig</span>.<br>
+
+
+      <br>
+
+
+      <span style="font-weight: bold;">NodeB</span>
+has no database file, hence its trace is not displayed in
+symbolic form, but in hermetic numbers.<br>
+
+
+Both nodes are mapped to <span style="font-weight: bold;">Virtual
+#1</span> (Channel 1), as we have no real
+hardware.<br>
+
+
+      <br>
+
+
+Selecting <span style="font-weight: bold;">j1939Short.dbc</span>
+then double-clicking the black arrow right to Database Files and
+choosing
+Edit opens it:<br>
+
+
+      <br>
+
+
+      <br>
+
+
+      
+      <div align="center"> <img style="width: 542px; height: 359px;" alt="dbc editor" title="dbc editor" src="images/chapt_6/dbc_editor.png">
+      </div>
+
+
+      <br>
+
+
+      <br>
+
+
+This is a very short database file, open it with a text editor and this
+is its&nbsp;contents:&nbsp;
+      
+      <pre style="margin-left: 40px;">(notice: although accepted by the sw, this is not in true .dbc format - by opening than<br>saving again the file it will be saved in the correct format)</pre>
+
+
+      
+      <div style="margin-left: 40px; color: rgb(0, 102, 0);">
+      
+      <pre>VERSION ""<br><br>NS_ :<br><br>BS_ :<br><br>BU_ :<br><br>BO_ 2147544576 AddressClaimed: 8<br>SG_ ArbitraryAddressCapable : 63|1@1+ (1,0) [0|0] ""<br>SG_ IndustryGroup : 60|3@1+ (1,0) [0|0] ""<br>SG_ VehicleSystemInstance : 56|4@1+ (1,0) [0|0] ""<br>SG_ VehicleSystem : 49|7@1+ (1,0) [0|0] ""<br>SG_ Function : 40|8@1+ (1,0) [0|0] ""<br>SG_ FunctionInstance : 35|5@1+ (1,0) [0|0] ""<br>SG_ ECUInstance : 32|3@1+ (1,0) [0|0] ""<br>SG_ ManufacturerCode : 21|11@1+ (1,0) [0|0] ""<br>SG_ IdentityNumber : 0|21@1+ (1,0) [0|0] ""</pre>
+
+
+      </div>
+
+
+      <span style="font-family: Verdana,courier;">No need
+to go into the *.dbc Vector Informatik's proprietary format (it has
+become a <span style="font-style: italic;">quasi de facto</span>
+standard), except to note that </span>2147544576
+= 0x8000<span style="font-weight: bold;">EE00</span>,
+and the fields of <span style="font-weight: bold;">Name</span>
+describe the bit position of every
+field (the bit <span style="font-weight: bold;">ArbitraryAddressCapable</span>
+is bit 63 (or the
+64th) an uses 1 bit,&nbsp;or bit 8 of the 8th byte, etc., down to <span style="font-weight: bold;">IdentityNumber</span> which
+is bit 0 and uses 21 bits - please have a look at
+the SAE
+J1939-91 4.2.2.1 Address Claimed message).<br>
+
+
+      <br>
+
+
+      
+      <h4><a name="2_-_The_nodes_Script_language"></a>
+      <br>
+
+
+      <br>
+
+
+      </h4>
+
+
+      
+      <h4>2
+-&nbsp;The nodes Script
+language</h4>
+
+
+Back to the window CAN Interface Configuration of <span style="font-weight: bold;">NodeA</span>,
+click the black arrow to the right of Script File, to open (in Qpe text
+editor - will it evolve to a complete IDE?) the <span style="font-weight: bold;">NodeA.sig</span> file.<br>
+
+
+It is C-like, and altough I could not find any reference for some some
+basic types, it is easy to use.<br>
+
+
+      <br>
+
+
+We can see that 2 timers have been defined, one for the periodic LED
+status update, the other for the <span style="font-weight: bold;">Address
+Claimed</span> timeout.<br>
+
+
+The <span style="color: rgb(51, 51, 255); font-weight: bold;">compare_names</span>
+routine does it the right way (unlike the CANoe example, beaware), the
+most significant bit is <span style="font-weight: bold;">ArbitraryAddressCapable</span>
+bit, the less
+significant one is IdentityNumber bit 0.<br>
+
+
+      <br>
+
+
+      
+      <p align="center"> <iframe marginheight="0" marginwidth="1" src="samples/NodeA_sig_cs.html" frameborder="1" height="400" width="98%"></iframe><br>
+
+
+      <br>
+
+
+      </p>
+
+
+      
+      <div style="text-align: left;">Something new is the
+event <span style="color: rgb(51, 51, 255); font-weight: bold;">on
+action</span> <span style="color: rgb(102, 102, 102);" class="st0">"Set
+Node Address".</span><br>
+
+
+To have a look at it, on the panel1 panel, click the small
+padlock, lo unlock the panel, then click the button "Set Address", to
+select it, then right-click it to open the context menu:<br>
+
+
+      </div>
+
+
+      
+      <p align="center"> <br>
+
+
+      </p>
+
+
+      
+      <center>
+      
+      <table style="text-align: left;" border="0" cellpadding="4" cellspacing="4">
+
+
+        <tbody>
+
+
+          <tr>
+
+
+            <td style="vertical-align: top;"><img style="width: 275px; height: 409px;" alt="Panel 1 -Item Properties" title="Panel 1 -Item Properties" src="images/chapt_6/panel1_item_80.png"> </td>
+
+
+            <td style="vertical-align: top;"> <img style="width: 374px; height: 344px;" alt="Control Properties" title="Control Properties" src="images/chapt_6/control_properties_80.png"> </td>
+
+
+          </tr>
+
+
+          <tr>
+
+
+            <td colspan="2">Unlock the panel (click on the
+small paddlock), right-click for the context-menu. select Item
+Properties,<br>
+
+
+select the tab Script Activation</td>
+
+
+          </tr>
+
+
+        
+        </tbody>
+      
+      </table>
+
+
+      </center>
+
+
+      <br>
+
+
+      <br>
+
+
+This is where the entry point&nbsp;<span style="color: rgb(102, 102, 102);" class="st0">"Set
+Node Address"</span> was defined. Interestingly, going back to
+the script file, changing&nbsp;<span style="color: rgb(102, 102, 102);" class="st0">"Set
+Node Address"</span> to&nbsp;<span style="color: rgb(102, 102, 102);" class="st0">"Set
+Node Address_XX"</span> for example, saving and compiling, then
+re-opening Script Activation, the change is reflected and the contents
+of the Properties Dialog is updated.<br>
+
+
+      <br>
+
+
+Now lets us see the simulation running. Click the Start icon (after
+re-compiling if necessary), and after a while use Panel1 to change <span style="font-weight: bold;">NodeA</span> address to
+129, thus causing a conflict with <span style="font-weight: bold;">NodeB</span>:<br>
+
+
+      <br>
+
+
+      
+      <center>
+      
+      <table style="text-align: left;" border="0" cellpadding="4" cellspacing="4">
+
+
+        <tbody>
+
+
+          <tr>
+
+
+            <td> <img style="width: 700px; height: 438px;" alt="Trace 1" title="Trace 1" src="images/chapt_6/trace1.png"></td>
+
+
+          </tr>
+
+
+          <tr>
+
+
+            <td>Simulation running: Trace 1 window with CAN
+Signal Table open.</td>
+
+
+          </tr>
+
+
+        
+        </tbody>
+      
+      </table>
+
+
+      </center>
+
+
+      <br>
+
+
+      <br>
+
+
+On the trace window we can see how on startup both <span style="font-weight: bold;">NodeA</span> and <span style="font-weight: bold;">NodeB</span>
+successfully claimed addresses 0x80 (128) and 0x81 (129), then we see <span style="font-weight: bold;">NodeA</span> sending the
+"toggle LED" message every 500ms, and in the last 3
+lines we see how <span style="font-weight: bold;">NodeA</span>
+claimed address 0x81, <span style="font-weight: bold;">NodeB</span>
+issued the same
+claim, and lastly <span style="font-weight: bold;">NodeA</span>
+sends <span style="font-weight: bold;">CannotClaimAddress</span>,
+which is exactly the
+same PGN as <span style="font-weight: bold;">Address
+Claimed</span>, but with Source Address set to <span style="font-weight: bold;">null
+address</span> (0xFE).<br>
+
+
+      <br>
+
+
+      <span style="font-weight: bold;">NodeA</span>
+looses arbitration because it NAME is greater then <span style="font-weight: bold;">NodeB</span>'s:<br>
+
+
+      <br>
+
+
+      <span style="font-weight: bold;">NodeA</span>
+NAME: 2a 0a <span style="font-weight: bold;">63</span>
+5a 28 21 2a 3a<br>
+
+
+      <span style="font-weight: bold;">NodeB</span>
+NAME: 2a 0a <span style="font-weight: bold;">62</span>
+5a 28 20 30 39<br>
+
+
+      <br>
+
+
+The <span style="font-weight: bold;">Messages Window</span>
+shows the output of the <span style="color: rgb(51, 51, 255);">printf
+      </span>debug
+in <span style="font-weight: bold;">NodeA</span>'s <span style="color: rgb(51, 51, 255); font-weight: bold;">compare_names</span>()
+routine:<br>
+
+
+      <br>
+
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+14&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+1.754&nbsp;&nbsp;&nbsp; cn (7): myName[7]= 2a,
+otherName[7]= 2a <br>
+
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+15&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+1.754&nbsp;&nbsp;&nbsp; cn (6): myName[6]= 0a,
+otherName[6]= 0a <br>
+
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+16&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+1.754&nbsp;&nbsp;&nbsp; cn (5): myName[5]= 63,
+otherName[5]= 62 <br>
+
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+17&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+1.754&nbsp;&nbsp;&nbsp; Conflict: AddressClaimed:
+pgn=60928, pri=3, sa=81, da=ff, cres=1 <br>
+
+
+      <br>
+
+
+      <br>
+
+
+What if you just want to test some message and don't want to
+build a <span style="font-weight: bold;">Panel</span>
+? You can use the <span style="font-weight: bold;">CAN-Send-
+Message-Window</span>,
+and do it imediately:<br>
+
+
+      <br>
+
+
+      
+      <center>
+      
+      <table style="text-align: left;" border="0" cellpadding="4" cellspacing="4">
+
+
+        <tbody>
+
+
+          <tr>
+
+
+            <td> <img style="width: 685px; height: 358px;" alt="CAN Send" title="CAN Send" src="images/chapt_6/can-send.png"></td>
+
+
+          </tr>
+
+
+          <tr>
+
+
+            <td>CAN-Send Window (NodeA NAME &lt; NodeB NAME).
+The sliding cursors ajust the Signals raw values.</td>
+
+
+          </tr>
+
+
+        
+        </tbody>
+      
+      </table>
+
+
+      </center>
+
+
+      <br>
+
+
+      <br>
+
+
+Here we defined <span style="font-weight: bold;">NodeA</span>
+NAME (using the sliding cursors on the bottom
+window) to be lesser then <span style="font-weight: bold;">NodeB</span>'s,
+that is to say, <span style="font-weight: bold;">NodeA</span>
+has higher priority..<br>
+
+
+I took care so that every field was replicated, except <span style="font-weight: bold;">IdentityNumber</span>
+low byte (which supplies also NAME's low byte), for <span style="font-weight: bold;">NodeB</span> this is <span style="font-weight: bold;">12345</span>
+(0x3039) and for <span style="font-weight: bold;">NodeA</span>
+      <span style="font-weight: bold;">12344</span>
+(0x3038).<br>
+
+
+      <br>
+
+
+Running again the simulation then clicking the <span style="font-weight: bold;">Send</span> button, the
+highlighted messaged is injected in the CAN bus:<br>
+
+
+      <br>
+
+
+      
+      <center>
+      
+      <table style="text-align: left;" border="0" cellpadding="4" cellspacing="4">
+
+
+        <tbody>
+
+
+          <tr>
+
+
+            <td> <img style="width: 712px; height: 397px;" alt="CAN Send Trace 2" title="CAN Send Trace 2" src="images/chapt_6/trace2.png"></td>
+
+
+          </tr>
+
+
+          <tr>
+
+
+            <td>The resulting trace: NodeA wins arbitration
+because its NAME is the lesser one.</td>
+
+
+          </tr>
+
+
+        
+        </tbody>
+      
+      </table>
+
+
+      </center>
+
+
+      <br>
+
+
+Now we see that after 1.120ms, when we clicked on CAN-Send <span style="font-weight: bold;">Send</span> button, it is <span style="font-weight: bold;">NodeA</span> that wins the
+contention:<br>
+
+
+      <br>
+
+
+      <span style="font-weight: bold;">NodeA</span>
+NAME: 2a 0a 62 5a
+28 20 30 <span style="font-weight: bold;">38</span><br>
+
+
+      <span style="font-weight: bold;">NodeB</span>
+NAME: 2a 0a 62
+5a 28 20 30 <span style="font-weight: bold;">39</span><br>
+
+
+      <br>
+
+
+The Messages Window shows the output of the <span style="color: rgb(51, 51, 255);">printf </span>debug
+in NodeA's <span style="color: rgb(51, 51, 255); font-weight: bold;">compare_names</span>()
+routine:<br>
+
+
+      <br>
+
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+10&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+1.982&nbsp;&nbsp;&nbsp; cn (7): myName[7]= 2a,
+otherName[7]= 2a <br>
+
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+11&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+1.982&nbsp;&nbsp;&nbsp; cn (6): myName[6]= 0a,
+otherName[6]= 0a <br>
+
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+12&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+1.982&nbsp;&nbsp;&nbsp; cn (5): myName[5]= 62,
+otherName[5]= 62 <br>
+
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+13&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+1.982&nbsp;&nbsp;&nbsp; cn (4): myName[4]= 5a,
+otherName[4]= 5a <br>
+
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+14&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+1.982&nbsp;&nbsp;&nbsp; cn (3): myName[3]= 28,
+otherName[3]= 28 <br>
+
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+15&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+1.982&nbsp;&nbsp;&nbsp; cn (2): myName[2]= 20,
+otherName[2]= 20 <br>
+
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+16&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+1.982&nbsp;&nbsp;&nbsp; cn (1): myName[1]= 30,
+otherName[1]= 30 <br>
+
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+17&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+1.982&nbsp;&nbsp;&nbsp; cn (0): myName[0]= 39,
+otherName[0]= 38 <br>
+
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+18&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+1.982&nbsp;&nbsp;&nbsp; Conflict: AddressClaimed:
+pgn=60928, pri=0, sa=81, da=ff, cres=1 <br>
+
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+19&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+1.982&nbsp;&nbsp;&nbsp; I (NodeB) loose! <br>
+
+
+      <br>
+
+
+This time the NAME comparision went down to the last bit - the only one
+that tells one NAME from the other..<br>
+
+
+      <br>
+
+
+      
+      <div style="margin-left: 40px;">[I noticed that the
+priority of this message is pri=0, but couldn't find how to fix that]<br>
+
+
+      </div>
+
+
+      <br>
+
+
+      <br>
+
+
+      
+      <hr style="width: 100%; height: 2px;">
+      
+      <h4><a name="And_it_comes_with_fancy_graphic_panels"></a><br>
+
+
+      <br>
+
+
+      </h4>
+
+
+      
+      <h4>3 - Xtm
+comes with graphic panels and more<br>
+
+
+      </h4>
+
+
+      <code></code>On the <span style="font-weight: bold;">Panel-Window</span>,
+controlled by mouse
+or keyboard, panels can be created with a Panel Editor. With them, the
+user
+can interactively change the values of discrete and continuous
+environment variables during the simulation, as well as display signals.<br>
+
+
+Control elements make it possible to modify analog signals and control
+script-programs, as we saw above.<br>
+
+
+      <br>
+
+
+      <br>
+
+
+As an example, this is how the Samples\Panel\Panel.xtm example looks
+like:<br>
+
+
+      <br>
+
+
+      
+      <center> <img style="width: 736px; height: 568px;" alt="panel example" title="panel example" src="images/chapt_6/graphics.png"><br>
+
+
+      </center>
+
+
+      <br>
+
+
+Above you can see also the&nbsp;<span style="font-weight: bold;">Graphic-Window</span>
+which displays analog signals in the form of an oscillograph.<br>
+
+
+This can be complemented by a Tune Window, where the numeric value of
+analog signals can be displayed, and values of signals defined as
+outputs can be changed.<br>
+
+
+      <br>
+
+
+Also not shown, there is a <span style="font-weight: bold;">CAN
+Statistic Window</span> that displays the state and statistic
+information of all available CAN interfaces.The data is displayed in a
+table.<br>
+
+
+      <br style="font-weight: bold;">
+
+
+      <span style="font-weight: bold;">Xtm</span> is
+by the current
+standards a quite small download, less then 4MB. But it is packed with
+all the important features, and as soon as one gets used to it, it is
+quite easy to use.<br>
+
+
+I&nbsp;hope Michael Eisele in the next versions keeps adding more
+and
+more samples, because by playing the samples and modifying them seems
+to me to be the most agreable way of learning the (hiden) details
+of&nbsp;his wonderful program.<br>
+
+
+      <br>
+
+
+      
+      <hr style="width: 100%; height: 2px;">
+      
+      <h4><a name="What_is_next"></a> <br>
+
+
+      <br>
+
+
+      </h4>
+
+
+      
+      <h4>4 - What is
+next?</h4>
+
+
+Again I am going slower than antecipated, my productivity is down to
+one chapter every month. Rats!<br>
+
+
+      <br>
+
+
+I hope next time to be able to go back to the firmware and hardware,
+before that stuff gets buried forever in my drawer.<br>
+
+
+Our goal is still to improve the NMT behaviour of our small 3 PIC
+system. Slowly, slowly...<br>
+
+
+      <br>
+
+
+Stay with&nbsp;us, may be we will get somewhere!<br>
+
+
+      <br>
+
+
+      
+      <div align="center">
+      
+      <table style="width: 70%;" border="0" cellpadding="2" cellspacing="2">
+
+
+        <tbody>
+
+
+          <tr>
+
+
+            <td style="background-color: rgb(224, 224, 224); text-align: left;">Don't
+forget: if you don't
+want to miss the next chapter, just drop me
+an email to <span style="font-weight: bold;">recursos.pt@gmail.com</span>
+subject: J1939 CAN, and I will notify you.<br>
+
+
+No other use will be made of your e-mail address.</td>
+
+
+          </tr>
+
+
+        
+        </tbody>
+      
+      </table>
+
+
+      </div>
+
+
+      <br>
+
+
+      <br>
+
+
+      
+      <hr style="width: 100%; height: 2px;"><br>
+
+
+      <br>
+
+
+And that's
+all, folks.<br>
+
+
+Please let me know of any broken links, missing
+parts etc. you may find here.<br>
+
+
+Next issues will become more
+sophisticated - I hope!.<br>
+
+
+      <span class="quoted"></span><br>
+
+
+      <span class="quoted"></span><br>
+
+
+      
+      <div align="center"><a href="http://www.flowerdeliverydeals.com/"><img src="http://c4.amazingcounters.com/counter.php?i=890627&amp;c=2672194" alt="Send Flowers" border="0"></a><br>
+
+
+      <small><a href="http://www.amazingcounters.com"><font color="#999999">Free Hit Counter</font></a></small></div>
+
+
+      
+&lt;&lt; <a href="index.html">back to main
+page</a><br>
+
+&lt;&lt; <a href="index_5.html">previous chapter</a>
+(Vector's CANoe CAN bus simulator)
+      <br>
+      <br>
+
+
+      
+      <div style="text-align: right;">(The "J1939 Address
+Claiming" Microchip sample bug) <a href="index_7.html">next chapter</a> &gt;&gt;<br>
+      </div>
+      <br>
+
+
+      <a href="mailto:recursos.pt@gmail.com">&copy;Rec</a>
+&nbsp;(recursos.pt@gmail.com) <br>
+
+
+06-04-27<br>
+
+
+      <br>
+
+
+
+      </td>
+
+
+    </tr>
+
+
+    <tr>
+
+
+      <td></td>
+
+
+    </tr>
+
+
+  
+  </tbody>
+</table>
+
+
+<br>
+
+
+<br>
+
+
+</body>
+</html>

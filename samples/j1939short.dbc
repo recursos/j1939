@@ -1,0 +1,42 @@
+VERSION "HIPBNYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY/4/%%%/4/'%**4YYY///"
+
+
+NS_ : 
+	NS_DESC_
+	CM_
+	BA_DEF_
+	BA_
+	VAL_
+	CAT_DEF_
+	CAT_
+	FILTER
+	BA_DEF_DEF_
+	EV_DATA_
+	ENVVAR_DATA_
+	SGTYPE_
+	SGTYPE_VAL_
+	BA_DEF_SGTYPE_
+	BA_SGTYPE_
+	SIG_TYPE_REF_
+	VAL_TABLE_
+	SIG_GROUP_
+	SIG_VALTYPE_
+	SIGTYPE_VALTYPE_
+
+BS_:
+
+BU_:
+
+
+BO_ 2147544576 AddressClaimed: 8 Vector__XXX
+ SG_ ArbitraryAddressCapable : 63|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ IndustryGroup : 60|3@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ VehicleSystemInstance : 56|4@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ VehicleSystem : 49|7@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Function : 40|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ FunctionInstance : 35|5@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ ECUInstance : 32|3@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ ManufacturerCode : 21|11@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ IdentityNumber : 0|21@1+ (1,0) [0|0] "" Vector__XXX
+
+

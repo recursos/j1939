@@ -1,0 +1,60 @@
+<html>
+<head>
+   <title>capl.c</title>
+   <meta name="generator" content="Lore&#039;s Source to HTML Converter - http://www.newty.de/lsc/index.html"
+</head>
+
+<body style="background:#ffffff;"><a name="top"></a>
+<tr><td><a href="Overview.html"><font color="#0000ff">Back </font></a>
+
+<pre><code><font color="#0000ff">
+<font color="#008080"><i>/*</i></font>
+<font color="#008080"><i> * Node3 - Simple node with address claiming       Version 1.0</i></font>
+<font color="#008080"><i> *</i></font>
+<font color="#008080"><i> * Copyright 2005, Vector Informatik GmbH - All right reserved</i></font>
+<font color="#008080"><i> *</i></font>
+<font color="#008080"><i> * History:</i></font>
+<font color="#008080"><i> * 1.0 (Jr) Created </i></font>
+<font color="#008080"><i> */</i></font>
+variables
+<font color="#000000">{</font>
+  <font color="#008080"><i>// Constants</i></font>
+  <font color="#800080">const int</font>  kNullAddr    <font color="#000000">=</font> <font color="#ff0080">0xfe</font><font color="#000000">;</font>   <font color="#008080"><i>// Null address</i></font>
+  <font color="#800080">const int</font>  kGlobalAddr  <font color="#000000">=</font> <font color="#ff0080">0xff</font><font color="#000000">;</font>   <font color="#008080"><i>// Global address</i></font>
+  <font color="#800080">const int</font>  kSuccess     <font color="#000000">=</font> <font color="#ff0080">0</font><font color="#000000">;</font>      <font color="#008080"><i>// Nodelayer function returns 0 on success</i></font>
+
+  <font color="#800080">const int</font>  kInitialized <font color="#000000">=</font> <font color="#ff0080">0</font><font color="#000000">;</font>      <font color="#008080"><i>// </i></font>
+  <font color="#800080">const int</font>  kClaiming    <font color="#000000">=</font> <font color="#ff0080">1</font><font color="#000000">;</font>      <font color="#008080"><i>// </i></font>
+  <font color="#800080">const int</font>  kOnline      <font color="#000000">=</font> <font color="#ff0080">2</font><font color="#000000">;</font>      <font color="#008080"><i>// </i></font>
+  <font color="#800080">const int</font>  kOffline     <font color="#000000">=</font> <font color="#ff0080">3</font><font color="#000000">;</font>      <font color="#008080"><i>// </i></font>
+
+  <font color="#800080">char</font> gNodeName<font color="#000000">[</font><font color="#ff0080">32</font><font color="#000000">]      =</font> &quot;Node3&quot;<font color="#000000">;</font> <font color="#008080"><i>// Name of the node, is used for output to write window</i></font>
+
+  <font color="#008080"><i>// simulation constants</i></font>
+
+  <font color="#008080"><i>// communication variables</i></font>
+  BYTE  gECUAddress       <font color="#000000">=</font> kNullAddr<font color="#000000">;</font>    <font color="#008080"><i>// Address of this ECU</i></font>
+  BYTE  gECUState         <font color="#000000">=</font> kInitialized<font color="#000000">;</font> <font color="#008080"><i>// Communication state of the ECU</i></font>
+  BYTE  gACLPending       <font color="#000000">=</font> <font color="#ff0080">0</font><font color="#000000">;</font>            <font color="#008080"><i>// 1, if sending ACL</i></font>
+  BYTE  gACLRqPending     <font color="#000000">=</font> <font color="#ff0080">0</font><font color="#000000">;</font>            <font color="#008080"><i>// 1, if sending request for ACL was received during address claiming</i></font>
+
+  pg ACL      TX_ACL<font color="#000000">;</font>                     <font color="#008080"><i>// TX Buffer: Address Claiming</i></font>
+  pg ACKM     TX_ACKM<font color="#000000">;</font>                    <font color="#008080"><i>// TX Buffer: Acknowledge</i></font>
+  pg HB_Node3 TX_HB<font color="#000000">;</font>                      <font color="#008080"><i>// Tx Buffer: Heartbeat</i></font>
+  msTimer     ACLTimer<font color="#000000">;</font>                   <font color="#008080"><i>// Timer for address claiming</i></font>
+  msTimer     TX_HB_Timer<font color="#000000">;</font>
+
+  <font color="#008080"><i>// Definition of debugging constants</i></font>
+  <font color="#800080">const int</font> kDbgInfo    <font color="#000000">=</font> <font color="#ff0080">10</font><font color="#000000">;</font>
+  <font color="#800080">const int</font> kDbgWarning <font color="#000000">=</font> <font color="#ff0080">5</font><font color="#000000">;</font>
+  <font color="#800080">const int</font> kDbgError   <font color="#000000">=</font> <font color="#ff0080">1</font><font color="#000000">;</font>
+  <font color="#800080">const int</font> kDbgQuiet   <font color="#000000">=</font> <font color="#ff0080">0</font><font color="#000000">;</font>
+
+  <font color="#008080"><i>// General global variables</i></font>
+  <font color="#800080">int</font> gDbgLevel         <font color="#000000">=</font> kDbgWarning<font color="#000000">;</font> <font color="#008080"><i>// Set debug level for output to write window</i></font>
+<font color="#000000">}</font>
+</font>
+</code></pre>
+<a href="#top"><font color="#0000ff">Top</a></font></body></html>
+
+<!-- Generated by Lore&#039;s Source to HTML Converter(http://www.newty.de/lsc/index.html) -->
